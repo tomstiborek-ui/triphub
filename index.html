@@ -1277,16 +1277,20 @@ function viewMembers(){
   const onTrip = (t,k) => (t.cars||[]).includes(k) || t.crew.some(c => c[1]===k);
   const people = MEMBERS.map(m => {
     const cars = m.cars.map(k => ({k, ts:past.filter(t => onTrip(t,k)), nx:!!next && onTrip(next,k) && !carOut(next,k), nxOut:!!next && onTrip(next,k) && carOut(next,k)}));
-    const trips = past.filter(t => m.cars.some(k => onTrip(t,k)) || (t.people||[]).includes(m.n));
-    return {...m, trips:trips.length, cars, going:!!next && next.crew.some(c => c[0]===m.n && c[2]!=="out"), notGoing:!!next && next.crew.some(c => c[0]===m.n && c[2]==="out")};
+    // Hybrid people (Tom 2026-10-05): a driver can also have trips as a co-driver; the role is per trip.
+    const coTs = past.filter(t => (t.codrivers||[]).includes(m.n) && !coOut(t,m.n));
+    const trips = past.filter(t => m.cars.some(k => onTrip(t,k)) || (t.people||[]).includes(m.n) || coTs.includes(t));
+    return {...m, trips:trips.length, coTs, cars, going:!!next && next.crew.some(c => c[0]===m.n && c[2]!=="out"), notGoing:!!next && next.crew.some(c => c[0]===m.n && c[2]==="out")};
   });
+  // People who are also drivers (in MEMBERS) get one card in Řidiči that lists their co-driver trips too.
+  const coOnly = CODRIVERS.filter(p => !member(p.n));
   const fleet = Object.keys(CARS).map(k => ({k, owner:ownerOf(k), trips:past.filter(t => onTrip(t,k)).length}));
   const rows = fleet.map(f => { const pf = (CAR_INFO[f.k]||{}).perf || {}; return {...f, ...CARS[f.k], ratio:CARS[f.k].kg/CARS[f.k].hp, acc:pf.acc, vmax:pf.vmax, approx:pf.approx}; })
     .sort((a,b) => (a[fleetSort]==null) - (b[fleetSort]==null) || ((a[fleetSort]||0) - (b[fleetSort]||0)) * fleetDir || b.hp - a.hp);
   return `
     <div class="totals">
       <div class="total"><span class="label">Řidiči</span><div class="v">${MEMBERS.length}</div></div>
-      <div class="total"><span class="label">Spolujezdci</span><div class="v">${CODRIVERS.length}</div></div>
+      <div class="total"><span class="label">Spolujezdci</span><div class="v">${coOnly.length}</div></div>
       <div class="total"><span class="label">Auta</span><div class="v">${rows.length}</div></div>
       <div class="total"><span class="label">Odjeté tripy</span><div class="v">${past.length}</div></div>
     </div>
@@ -1294,20 +1298,20 @@ function viewMembers(){
     <div class="members">${people.map(p => `
       <article class="member">
         <div class="top-row">${avatar(p.n)}<div><div class="name">${esc(p.n)}</div>${p.going?`<div class="member-tags"><span class="tag next">Jede: ${esc(next.name)}</span></div>`:p.notGoing?`<div class="member-tags"><span class="tag out">Nejede: ${esc(next.name)}</span></div>`:""}
-          <div class="meta">${p.cars.length} ${pl(p.cars.length,"auto","auta","aut")} · ${p.trips} ${pl(p.trips,"trip","tripy","tripů")}</div></div></div>
+          <div class="meta">${p.coTs.length?"Řidič i spolujezdec · ":""}${p.cars.length} ${pl(p.cars.length,"auto","auta","aut")} · ${p.trips} ${pl(p.trips,"trip","tripy","tripů")}</div></div></div>
         <div class="garage">${p.cars.map(({k,ts,nx,nxOut}) => `
           <div class="gcar">
             <button class="model" data-row="${k}" aria-label="${esc(CARS[k].m)}: ukázat v tabulce aut">${flag(k)}${esc(CARS[k].m)}</button>
             <span class="tags">${planTag(k)}${nx ? `<span class="tag next">Jede: ${esc(next.name)}</span>`:nxOut ? `<span class="tag out">Nejede: ${esc(next.name)}</span>`:""}${ts.map(t => `<button class="tag" data-goto="${t.id}">${esc(t.name)}</button>`).join("")}${!nx && !nxOut && !ts.length ? `<span class="note">Zatím bez tripu</span>`:""}</span>
-          </div>`).join("")}</div>
+          </div>`).join("")}</div>${p.coTs.length?`<div class="tags co-trips"><span class="note">Jako spolujezdec:</span>${p.coTs.map(t => `<button class="tag" data-goto="${t.id}">${esc(t.name)}</button>`).join("")}</div>`:""}
       </article>`).join("")}</div>
 
     <div class="subhead"><h3>Spolujezdci</h3></div>
-    <div class="members">${CODRIVERS.map(p => ({...p, ts: past.filter(t => ((t.codrivers||[]).includes(p.n) && !coOut(t,p.n)) || (t.people||[]).includes(p.n))})).map(p => `
+    <div class="members">${coOnly.map(p => ({...p, ts: past.filter(t => ((t.codrivers||[]).includes(p.n) && !coOut(t,p.n)) || (t.people||[]).includes(p.n)), drove: past.filter(t => t.crew.some(c => c[0]===p.n && c[1]) || (t.cars||[]).some(k => CARS[k] && CARS[k].owner===p.n))})).map(p => `
       <article class="member">
         <div class="top-row">${avatar(p.n)}<div><div class="name">${esc(p.n)}</div>${(p.isNew || (next && ((next.codrivers||[]).includes(p.n) || coOut(next,p.n)))) ? `<div class="member-tags">${next && (next.codrivers||[]).includes(p.n)?`<span class="tag next">Jede: ${esc(next.name)}</span>`:next && coOut(next,p.n)?`<span class="tag out">Nejede: ${esc(next.name)}</span>`:""}${p.isNew?`<span class="tag">Nově letos</span>`:""}</div>`:""}
-          <div class="meta">Spolujezdec · ${p.ts.length} ${pl(p.ts.length,"trip","tripy","tripů")}</div></div></div>
-        ${Object.keys(CARS).filter(k => CARS[k].owner===p.n).map(k => `<div class="garage"><div class="gcar"><button class="model" data-row="${k}" aria-label="${esc(CARS[k].m)}: ukázat v tabulce aut">${flag(k)}${esc(CARS[k].m)}</button></div></div>`).join("")}<div class="tags">${p.ts.length ? p.ts.map(t => `<button class="tag" data-goto="${t.id}">${esc(t.name)}</button>`).join("") : `<span class="note">Zatím bez zapsaného tripu</span>`}</div>
+          <div class="meta">${p.drove.length?"Spolujezdec i řidič":"Spolujezdec"} · ${p.ts.length} ${pl(p.ts.length,"trip","tripy","tripů")}</div></div></div>
+        ${Object.keys(CARS).filter(k => CARS[k].owner===p.n).map(k => `<div class="garage"><div class="gcar"><button class="model" data-row="${k}" aria-label="${esc(CARS[k].m)}: ukázat v tabulce aut">${flag(k)}${esc(CARS[k].m)}</button></div></div>`).join("")}<div class="tags">${p.ts.length ? p.ts.map(t => `<button class="tag" data-goto="${t.id}">${esc(t.name)}${p.drove.includes(t)?" · řidič":""}</button>`).join("") : `<span class="note">Zatím bez zapsaného tripu</span>`}</div>
       </article>`).join("")}</div>
 
     <div class="subhead"><h3>Vozový park</h3>
