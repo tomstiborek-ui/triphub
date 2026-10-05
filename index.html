@@ -127,6 +127,7 @@ button,input,textarea,select{font:inherit;color:inherit}
 .story h3{font-size:23px;margin-top:6px}
 .story-del{background:none;border:0;padding:4px;margin:-4px -4px -4px 4px;color:var(--muted);cursor:pointer;border-radius:6px;display:inline-flex}
 .story-del:hover{color:#B3261E;background:var(--soft)}
+.story-del.edit:hover{color:var(--ink)}
 .story p{margin:8px 0 0;max-width:65ch}
 .byline{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .avatar{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font:600 12px/1 var(--mono);background:var(--ink);color:var(--surface);flex:none}
@@ -1114,10 +1115,19 @@ const sharedStories = {}; let storiesState = STORY_DB.url ? "loading" : "off";
 const dbHeaders = () => ({ apikey: STORY_DB.key, Authorization: `Bearer ${STORY_DB.key}`, "Content-Type": "application/json" });
 const storyDate = iso => { try { return new Date(iso).toLocaleDateString("cs-CZ", {day:"numeric", month:"numeric", year:"numeric"}); } catch(_) { return ""; } };
 const photoUrl = path => `${STORY_DB.url}/storage/v1/object/public/story-photos/${path.split("/").map(encodeURIComponent).join("/")}`;
-const toStory = r => ({id:r.id, by:r.author, t:r.title, body:r.body, photos:(r.photos||[]).map(photoUrl), date:storyDate(r.created_at)});
+const toStory = r => ({id:r.id, by:r.author, t:r.title, body:r.body, paths:r.photos||[], photos:(r.photos||[]).map(photoUrl), date:storyDate(r.created_at)});
 const MAX_STORY_PHOTOS = 10;
-let pickedPhotos = []; // [{file, url}] chosen in the form, uploaded on submit
+let pickedPhotos = []; // form photos: {path, url} already saved, or {file, url} new and uploaded on submit
+let editing = null;    // the shared story loaded into the form for editing
 const picksHTML = () => pickedPhotos.map((p,i) => `<div class="s-pick"><img src="${p.url}" alt=""><button type="button" data-unpick="${i}" aria-label="Odebrat fotku">×</button></div>`).join("");
+function editStory(id){
+  const st = Object.values(sharedStories).flat().find(x => x.id === id); if (!st) return;
+  pickedPhotos.forEach(p => p.file && URL.revokeObjectURL(p.url));
+  editing = {id, trip: pastId, by: st.by, t: st.t, body: st.body};
+  pickedPhotos = st.paths.map(path => ({path, url: photoUrl(path)}));
+  render(); const f = document.getElementById("compose"); if (f){ f.scrollIntoView({behavior:"smooth", block:"nearest"}); document.getElementById("s-title").focus({preventScroll:true}); }
+}
+function stopEditing(){ pickedPhotos.forEach(p => p.file && URL.revokeObjectURL(p.url)); pickedPhotos = []; editing = null; render(); }
 const refreshPicks = () => { const el = document.getElementById("s-picks"); if (el) el.innerHTML = picksHTML(); };
 // Shrink to max 1600 px on the long side; WebP where the browser can encode it, else JPEG.
 function shrinkPhoto(file){
@@ -1154,6 +1164,7 @@ function deleteStory(id, btn){
       if (!ok) throw new Error(/password/.test(j.message||"") ? "pass" : "fail");
       store.set("story-pass", pass);
       for (const k in sharedStories) sharedStories[k] = sharedStories[k].filter(s => s.id !== id);
+      if (editing && editing.id === id){ editing = null; pickedPhotos = []; }
       render();
     })
     .catch(err => { btn.disabled = false; if (err.message==="pass") store.set("story-pass", ""); alert(err.message==="pass" ? "Špatné heslo party." : "Příběh se nepodařilo smazat. Zkus to znovu."); });
@@ -1161,22 +1172,23 @@ function deleteStory(id, btn){
 function viewStories(t){
   const list = [...(sharedStories[t.id]||[]), ...t.stories];
   const carOf = n => { const c = t.crew.find(x => x[0]===n); return c && CARS[c[1]] ? CARS[c[1]].m : ""; };
-  const off = storiesState === "off";
+  const off = storiesState === "off", ed = editing && editing.trip === t.id ? editing : null;
+  const drivers = t.crew.filter(c=>c[2]!=="out").map(([n])=>n); if (ed && drivers.length && !drivers.includes(ed.by)) drivers.unshift(ed.by);
   return `<div class="stories">
     <div>${storiesState==="loading" && !list.length ? `<div class="empty">Načítám příběhy…</div>` : storiesState==="error" ? `<div class="empty">Příběhy se teď nepodařilo načíst. Zkus stránku obnovit.</div>` : list.length ? "" : `<div class="empty">Zatím žádné příběhy.</div>`}${list.map(s=>`
       <article class="story">
-        <div class="byline">${avatar(s.by)}<span class="who">${esc(s.by)}</span><span class="car">${esc(carOf(s.by))}</span><span class="label" style="margin-left:auto">${esc(s.date)}</span>${s.id!=null?`<button class="story-del" type="button" data-del-story="${s.id}" aria-label="Smazat příběh" title="Smazat příběh"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"/></svg></button>`:""}</div>
+        <div class="byline">${avatar(s.by)}<span class="who">${esc(s.by)}</span><span class="car">${esc(carOf(s.by))}</span><span class="label" style="margin-left:auto">${esc(s.date)}</span>${s.id!=null?`<button class="story-del edit" type="button" data-edit-story="${s.id}" aria-label="Upravit příběh" title="Upravit příběh"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button><button class="story-del" type="button" data-del-story="${s.id}" aria-label="Smazat příběh" title="Smazat příběh"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"/></svg></button>`:""}</div>
         <h3>${esc(s.t)}</h3><p>${esc(s.body)}</p>${s.photos&&s.photos.length?`<div class="story-photos">${s.photos.map((u,i)=>`<button type="button" data-sphoto="${s.id}:${i}" aria-label="Zvětšit fotku ${i+1}"><img src="${esc(u)}" alt="${esc(s.t)}, fotka ${i+1}" loading="lazy" decoding="async"></button>`).join("")}</div>`:""}
       </article>`).join("")}</div>
     <form class="compose" id="compose">
-      <span class="label">Napiš příběh</span>
-      <label for="s-by">Řidič${t.crew.length?`<select id="s-by">${t.crew.filter(c=>c[2]!=="out").map(([n])=>`<option>${esc(n)}</option>`).join("")}</select>`:`<input id="s-by" required maxlength="80" placeholder="Tvoje jméno">`}</label>
-      <label for="s-title">Nadpis<input id="s-title" required maxlength="160" placeholder="Den, kdy nám Gavia dala zabrat"></label>
-      <label for="s-body">Příběh<textarea id="s-body" required maxlength="8000" placeholder="Co se stalo na cestě?"></textarea></label>
+      <span class="label">${ed ? "Upravit příběh" : "Napiš příběh"}</span>
+      <label for="s-by">Řidič${drivers.length?`<select id="s-by">${drivers.map(n=>`<option${ed&&ed.by===n?" selected":""}>${esc(n)}</option>`).join("")}</select>`:`<input id="s-by" required maxlength="80" placeholder="Tvoje jméno" value="${ed?esc(ed.by):""}">`}</label>
+      <label for="s-title">Nadpis<input id="s-title" required maxlength="160" placeholder="Den, kdy nám Gavia dala zabrat" value="${ed?esc(ed.t):""}"></label>
+      <label for="s-body">Příběh<textarea id="s-body" required maxlength="8000" placeholder="Co se stalo na cestě?">${ed?esc(ed.body):""}</textarea></label>
       <label for="s-photos">Fotky (nejvýš ${MAX_STORY_PHOTOS})<input id="s-photos" type="file" accept="image/*" multiple></label>
       <div class="s-picks" id="s-picks">${picksHTML()}</div>
       <label for="s-pass">Heslo party<input id="s-pass" type="password" required autocomplete="current-password" value="${esc(store.get("story-pass"))}" placeholder="Heslo, které máme ve skupině"></label>
-      <button class="btn" type="submit"${off?" disabled":""}>Zveřejnit příběh</button>
+      <button class="btn" type="submit"${off?" disabled":""}>${ed ? "Uložit změny" : "Zveřejnit příběh"}</button>${ed ? `<button class="btn ghost" type="button" data-cancel-edit>Zrušit úpravy</button>` : ""}
       <span class="note" id="s-msg">${off ? "Ukládání příběhů zatím není zapnuté." : "Příběh uvidí všichni na triphub.cz."}</span>
     </form>
   </div>`;
@@ -1338,7 +1350,9 @@ const view = document.getElementById("view");
 view.addEventListener("click", e => {
   const b = e.target.closest("button"); if (!b) return;
   if (b.dataset.delStory){ deleteStory(+b.dataset.delStory, b); return; }
-  if (b.dataset.unpick){ const [p] = pickedPhotos.splice(+b.dataset.unpick, 1); URL.revokeObjectURL(p.url); refreshPicks(); return; }
+  if (b.dataset.editStory){ editStory(+b.dataset.editStory); return; }
+  if (b.hasAttribute("data-cancel-edit")){ stopEditing(); return; }
+  if (b.dataset.unpick){ const [p] = pickedPhotos.splice(+b.dataset.unpick, 1); if (p.file) URL.revokeObjectURL(p.url); refreshPicks(); return; }
   if (b.dataset.sphoto){ const [id,i] = b.dataset.sphoto.split(":"), st = Object.values(sharedStories).flat().find(x => x.id === +id); if (st){ lbList = st.photos.map(src => ({src, cap:st.t})); lbShow(+i); } return; }
   if (b.dataset.trip){ pastId = b.dataset.trip; if (pastTab==="roads" && !hasRoads(trip(pastId))) pastTab = "photos"; render(); }
   else if (b.dataset.tab){ pastTab = b.dataset.tab; render(); }
@@ -1389,24 +1403,31 @@ view.addEventListener("submit", e => {
   }
   if (e.target.id !== "compose") return;
   e.preventDefault();
-  const f = e.target, val = id => document.getElementById(id).value.trim(), msg = document.getElementById("s-msg"), btn = f.querySelector("button");
+  const f = e.target, val = id => document.getElementById(id).value.trim(), msg = document.getElementById("s-msg"), btn = f.querySelector('button[type="submit"]');
   if (!STORY_DB.url) return;
   const pass = document.getElementById("s-pass").value, tripId = pastId, story = {trip: tripId, by_name: val("s-by"), story_title: val("s-title"), story_body: val("s-body")};
   const rpc = (fn, body) => fetch(`${STORY_DB.url}/rest/v1/rpc/${fn}`, {method:"POST", headers: dbHeaders(), body: JSON.stringify(body)})
     .then(r => r.json().catch(() => ({})).then(j => { if (!r.ok) throw new Error(/password/.test(j.message||"") ? "pass" : "fail"); return j; }));
   btn.disabled = true; msg.textContent = "Ukládám…";
-  const files = pickedPhotos.map(p => p.file);
+  const picks = pickedPhotos.slice(), files = picks.filter(p => p.file).map(p => p.file), ed = editing && editing.trip === tripId ? editing : null;
   // Check the password before uploading, so a typo doesn't leave stray photos behind.
   (files.length ? rpc("check_story_pass", {pass}).then(ok => { if (!ok) throw new Error("pass"); }) : Promise.resolve())
     .then(() => files.reduce((chain, file, i) => chain.then(paths => {
       msg.textContent = `Nahrávám fotky ${i+1}/${files.length}…`;
       return shrinkPhoto(file).then(b => uploadPhoto(b, tripId, i)).then(p => [...paths, p]);
     }), Promise.resolve([])))
-    .then(photos => { msg.textContent = "Ukládám…"; return rpc("add_story", photos.length ? {pass, ...story, photos} : {pass, ...story}); })
+    .then(uploaded => {
+      msg.textContent = "Ukládám…";
+      let n = 0; const photos = picks.map(p => p.file ? uploaded[n++] : p.path);  // keep the order shown in the form
+      if (ed) return rpc("update_story", {pass, story_id: ed.id, by_name: story.by_name, story_title: story.story_title, story_body: story.story_body, photos});
+      return rpc("add_story", photos.length ? {pass, ...story, photos} : {pass, ...story});
+    })
     .then(j => {
       store.set("story-pass", pass);
-      pickedPhotos.forEach(p => URL.revokeObjectURL(p.url)); pickedPhotos = [];
-      (sharedStories[tripId] ||= []).unshift(toStory(j));
+      pickedPhotos.forEach(p => p.file && URL.revokeObjectURL(p.url)); pickedPhotos = [];
+      const list = sharedStories[tripId] ||= [];
+      if (ed){ const i = list.findIndex(x => x.id === ed.id); if (i >= 0) list[i] = toStory(j); else list.unshift(toStory(j)); editing = null; }
+      else list.unshift(toStory(j));
       render();
     })
     .catch(err => { btn.disabled = false; msg.textContent = err.message==="pass" ? "Špatné heslo party." : err.message==="upload" ? "Fotku se nepodařilo nahrát. Zkus to znovu." : "Příběh se nepodařilo uložit. Zkus to znovu."; });
