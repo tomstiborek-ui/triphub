@@ -608,7 +608,9 @@ const TRIPS = [
     // Tom 2026-10-05: one-day trip "Tomovo rozlučka", 8 Sep 2024. Cars, crew and photos not known yet.
     id:"rozlucka24", name:"Tomovo rozlučka", when:"8. září 2024", status:"done", days:1,
     codrivers:["Jiří Tyc"], // Tom 2026-10-05: Jiří jel jako spolujezdec na všech tripech.
-    blurb:"Jednodenní rozlučka. Auta, posádku a fotky ještě doplníme.",
+    // Tom 2026-10-05: on this trip people aren't split into drivers and co-drivers; one plain list.
+    people:["Jiří Tyc","Martin Vítovec","Jan Procházka","Otakar Doležal","Jan Verner","Petr Ježek"],
+    blurb:"Jednodenní rozlučka. Auta a fotky ještě doplníme.",
     crew:[],
     cars:[],
     stages:[],
@@ -762,6 +764,7 @@ function tripCars(t){
 }
 // People on a trip (past or next): drivers from crew (or the owners of the trip's cars when crew isn't recorded), then co-drivers.
 function tripPeople(t){
+  if (t.people) return t.people.length ? `<div class="trip-cars trip-people"><span class="label">Posádka · ${t.people.length} ${pl(t.people.length,"člověk","lidé","lidí")}</span>${t.people.map(n => `<span class="trip-person">${avatar(n)}<span>${esc(n)}</span></span>`).join("")}</div>` : "";
   const drivers = t.crew.length ? t.crew.filter(c => c[2]!=="out").map(c => c[0]) : (t.cars||[]).map(ownerOf).filter(Boolean);
   const people = [...new Set(drivers)].map(n => [n, "Řidič"]);
   (t.codrivers||[]).filter(n => !coOut(t,n) && !people.some(p => p[0]===n)).forEach(n => people.push([n, "Spolujezdec"]));
@@ -1268,7 +1271,7 @@ function viewMembers(){
   const onTrip = (t,k) => (t.cars||[]).includes(k) || t.crew.some(c => c[1]===k);
   const people = MEMBERS.map(m => {
     const cars = m.cars.map(k => ({k, ts:past.filter(t => onTrip(t,k)), nx:!!next && onTrip(next,k) && !carOut(next,k), nxOut:!!next && onTrip(next,k) && carOut(next,k)}));
-    const trips = past.filter(t => m.cars.some(k => onTrip(t,k)));
+    const trips = past.filter(t => m.cars.some(k => onTrip(t,k)) || (t.people||[]).includes(m.n));
     return {...m, trips:trips.length, cars, going:!!next && next.crew.some(c => c[0]===m.n && c[2]!=="out"), notGoing:!!next && next.crew.some(c => c[0]===m.n && c[2]==="out")};
   });
   const fleet = Object.keys(CARS).map(k => ({k, owner:ownerOf(k), trips:past.filter(t => onTrip(t,k)).length}));
