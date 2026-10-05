@@ -1473,7 +1473,6 @@ function viewPlaces(){
         <div class="place-body">
           <h4>${esc(p.n)}</h4>
           <div class="place-meta"><span class="label">${placeCat_(p).l}</span>${p.addr ? ` · ${esc(p.addr)}${p.approx ? " (přibližně)" : ""}` : ""}</div>
-          ${p.note ? `<p>${esc(p.note)}</p>` : ""}
           ${(p.trips||[]).filter(id => trip(id)).length ? `<div class="tags">${p.trips.filter(id => trip(id)).map(id => `<button class="tag" data-goto="${id}">${esc(trip(id).name)}</button>`).join("")}</div>` : ""}
         <div class="place-actions">
           <a class="ibtn primary" href="${navMapy(p)}" target="_blank" rel="noopener" title="Navigovat (Mapy.cz)" aria-label="Navigovat v Mapy.cz"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l18-8-8 18-2-8z"/></svg></a>
