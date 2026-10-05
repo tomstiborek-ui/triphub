@@ -1099,23 +1099,39 @@ function lbShow(i){
   [lbIdx+1, lbIdx-1].forEach(j => { const q = lbList[(j+lbList.length)%lbList.length]; if (q) new Image().src = q.src; });
 }
 
-const extraStories = {};
+// Shared stories live in Supabase (setup SQL: project files site/stories.sql). Empty url = not connected yet.
+const STORY_DB = { url: "", key: "" };
+const sharedStories = {}; let storiesState = STORY_DB.url ? "loading" : "off";
+const dbHeaders = () => ({ apikey: STORY_DB.key, Authorization: `Bearer ${STORY_DB.key}`, "Content-Type": "application/json" });
+const storyDate = iso => { try { return new Date(iso).toLocaleDateString("cs-CZ", {day:"numeric", month:"numeric", year:"numeric"}); } catch(_) { return ""; } };
+const toStory = r => ({by:r.author, t:r.title, body:r.body, date:storyDate(r.created_at)});
+function loadStories(){
+  if (!STORY_DB.url) return;
+  fetch(`${STORY_DB.url}/rest/v1/stories?select=*&order=created_at.desc`, {headers: dbHeaders()})
+    .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(rows => { for (const k in sharedStories) delete sharedStories[k]; rows.forEach(r => (sharedStories[r.trip_id] ||= []).push(toStory(r))); storiesState = "ok"; })
+    .catch(() => { storiesState = "error"; })
+    .finally(() => { if (sec==="past" && pastTab==="stories") render(); });
+}
+loadStories();
 function viewStories(t){
-  const list = [...(extraStories[t.id]||[]), ...t.stories];
+  const list = [...(sharedStories[t.id]||[]), ...t.stories];
   const carOf = n => { const c = t.crew.find(x => x[0]===n); return c && CARS[c[1]] ? CARS[c[1]].m : ""; };
+  const off = storiesState === "off";
   return `<div class="stories">
-    <div>${list.length?"":`<div class="empty">Zatím žádné příběhy.</div>`}${list.map(s=>`
+    <div>${storiesState==="loading" && !list.length ? `<div class="empty">Načítám příběhy…</div>` : storiesState==="error" ? `<div class="empty">Příběhy se teď nepodařilo načíst. Zkus stránku obnovit.</div>` : list.length ? "" : `<div class="empty">Zatím žádné příběhy.</div>`}${list.map(s=>`
       <article class="story">
         <div class="byline">${avatar(s.by)}<span class="who">${esc(s.by)}</span><span class="car">${esc(carOf(s.by))}</span><span class="label" style="margin-left:auto">${esc(s.date)}</span></div>
         <h3>${esc(s.t)}</h3><p>${esc(s.body)}</p>
       </article>`).join("")}</div>
     <form class="compose" id="compose">
       <span class="label">Napiš příběh</span>
-      <label for="s-by">Řidič${t.crew.length?`<select id="s-by">${t.crew.filter(c=>c[2]!=="out").map(([n])=>`<option>${esc(n)}</option>`).join("")}</select>`:`<input id="s-by" required placeholder="Tvoje jméno">`}</label>
-      <label for="s-title">Nadpis<input id="s-title" required placeholder="Den, kdy nám Gavia dala zabrat"></label>
-      <label for="s-body">Příběh<textarea id="s-body" required placeholder="Co se stalo na cestě?"></textarea></label>
-      <button class="btn" type="submit">Zveřejnit příběh</button>
-      <span class="note">V tomto prototypu zůstanou příspěvky jen na tvé obrazovce.</span>
+      <label for="s-by">Řidič${t.crew.length?`<select id="s-by">${t.crew.filter(c=>c[2]!=="out").map(([n])=>`<option>${esc(n)}</option>`).join("")}</select>`:`<input id="s-by" required maxlength="80" placeholder="Tvoje jméno">`}</label>
+      <label for="s-title">Nadpis<input id="s-title" required maxlength="160" placeholder="Den, kdy nám Gavia dala zabrat"></label>
+      <label for="s-body">Příběh<textarea id="s-body" required maxlength="8000" placeholder="Co se stalo na cestě?"></textarea></label>
+      <label for="s-pass">Heslo party<input id="s-pass" type="password" required autocomplete="current-password" value="${esc(store.get("story-pass"))}" placeholder="Heslo, které máme ve skupině"></label>
+      <button class="btn" type="submit"${off?" disabled":""}>Zveřejnit příběh</button>
+      <span class="note" id="s-msg">${off ? "Ukládání příběhů zatím není zapnuté." : "Příběh uvidí všichni na triphub.cz."}</span>
     </form>
   </div>`;
 }
@@ -1324,8 +1340,19 @@ view.addEventListener("submit", e => {
   }
   if (e.target.id !== "compose") return;
   e.preventDefault();
-  (extraStories[pastId] ||= []).unshift({by:document.getElementById("s-by").value, t:document.getElementById("s-title").value, body:document.getElementById("s-body").value, date:"Právě teď"});
-  render();
+  const f = e.target, val = id => document.getElementById(id).value.trim(), msg = document.getElementById("s-msg"), btn = f.querySelector("button");
+  if (!STORY_DB.url) return;
+  const pass = document.getElementById("s-pass").value, tripId = pastId;
+  btn.disabled = true; msg.textContent = "Ukládám…";
+  fetch(`${STORY_DB.url}/rest/v1/rpc/add_story`, {method:"POST", headers: dbHeaders(), body: JSON.stringify({pass, trip: tripId, by_name: val("s-by"), story_title: val("s-title"), story_body: val("s-body")})})
+    .then(r => r.json().catch(() => ({})).then(j => ({ok: r.ok, j})))
+    .then(({ok, j}) => {
+      if (!ok) throw new Error(/password/.test(j.message||"") ? "pass" : "fail");
+      store.set("story-pass", pass);
+      (sharedStories[tripId] ||= []).unshift(toStory(j));
+      render();
+    })
+    .catch(err => { btn.disabled = false; msg.textContent = err.message==="pass" ? "Špatné heslo party." : "Příběh se nepodařilo uložit. Zkus to znovu."; });
 });
 
 try { matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => render()); new MutationObserver(() => render()).observe(document.documentElement, {attributes:true, attributeFilter:["data-theme"]}); } catch(_) {}
