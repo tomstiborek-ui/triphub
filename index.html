@@ -421,7 +421,8 @@ button.tag::after{content:"";position:absolute;inset:-12px -3px}
     <nav class="sections top-nav" role="tablist" aria-label="Sekce">
       <button class="sec" role="tab" id="sec-next" data-sec="next">Příští trip</button>
       <button class="sec" role="tab" id="sec-past" data-sec="past">Minulé tripy</button>
-      <button class="sec" role="tab" id="sec-members" data-sec="members">Členové a auta</button>
+      <button class="sec" role="tab" id="sec-members" data-sec="members">Lidé</button>
+      <button class="sec" role="tab" id="sec-cars" data-sec="cars">Auta</button>
     </nav>
   </header>
 
@@ -1272,7 +1273,8 @@ function viewPast(){
 // Fleet table sort: key + direction. Clicking the active sort flips the direction.
 let fleetSort = "hp", fleetDir = -1;
 const FLEET_SORTS = [["hp","Výkon",-1],["kg","Hmotnost",1],["ratio","kg/k",1],["l","Objem motoru",-1],["acc","0–100",1],["vmax","Max. rychlost",-1],["trips","Tripy",-1]];
-function viewMembers(){
+// Tom 2026-10-05: "Členové a auta" split into two sections, Lidé (#members, kept for old links) and Auta (#cars).
+function viewMembers(part){
   if (!MEMBERS.length && !Object.keys(CARS).length) return `<div class="empty">Zatím žádní členové. Pošli Claudovi jména kamarádů a auta, kterými jeli na jednotlivých tripech, a objeví se tady i se svou garáží.</div>`;
   const past = TRIPS.filter(t => t.status === "done");
   const next = TRIPS.find(t => t.status === "next");
@@ -1289,11 +1291,16 @@ function viewMembers(){
   const fleet = Object.keys(CARS).map(k => ({k, owner:ownerOf(k), trips:past.filter(t => onTrip(t,k)).length}));
   const rows = fleet.map(f => { const pf = (CAR_INFO[f.k]||{}).perf || {}; return {...f, ...CARS[f.k], ratio:CARS[f.k].kg/CARS[f.k].hp, acc:pf.acc, vmax:pf.vmax, approx:pf.approx}; })
     .sort((a,b) => (a[fleetSort]==null) - (b[fleetSort]==null) || ((a[fleetSort]||0) - (b[fleetSort]||0)) * fleetDir || b.hp - a.hp);
+  if (part === "cars") return `
+    <div class="totals">
+      <div class="total"><span class="label">Auta</span><div class="v">${rows.length}</div></div>
+      <div class="total"><span class="label">Majitelé</span><div class="v">${new Set(rows.map(r => r.owner).filter(Boolean)).size}</div></div>
+      <div class="total"><span class="label">Odjeté tripy</span><div class="v">${past.length}</div></div>
+    </div>${fleetHTML()}`;
   return `
     <div class="totals">
       <div class="total"><span class="label">Řidiči</span><div class="v">${MEMBERS.length}</div></div>
       <div class="total"><span class="label">Spolujezdci</span><div class="v">${coOnly.length}</div></div>
-      <div class="total"><span class="label">Auta</span><div class="v">${rows.length}</div></div>
       <div class="total"><span class="label">Odjeté tripy</span><div class="v">${past.length}</div></div>
     </div>
     <div class="subhead"><h3>Řidiči</h3></div>
@@ -1314,8 +1321,8 @@ function viewMembers(){
         <div class="top-row">${avatar(p.n)}<div><div class="name">${esc(p.n)}</div>${(p.isNew || (next && ((next.codrivers||[]).includes(p.n) || coOut(next,p.n)))) ? `<div class="member-tags">${next && (next.codrivers||[]).includes(p.n)?`<span class="tag next">Jede: ${esc(next.name)}</span>`:next && coOut(next,p.n)?`<span class="tag out">Nejede: ${esc(next.name)}</span>`:""}${p.isNew?`<span class="tag">Nově letos</span>`:""}</div>`:""}
           <div class="meta">${p.drove.length?"Spolujezdec i řidič":"Spolujezdec"} · ${p.ts.length} ${pl(p.ts.length,"trip","tripy","tripů")}</div></div></div>
         ${Object.keys(CARS).filter(k => CARS[k].owner===p.n).map(k => `<div class="garage"><div class="gcar"><button class="model" data-row="${k}" aria-label="${esc(CARS[k].m)}: ukázat v tabulce aut">${flag(k)}${esc(CARS[k].m)}</button></div></div>`).join("")}<div class="tags">${p.ts.length ? p.ts.map(t => `<button class="tag" data-goto="${t.id}">${esc(t.name)}${p.drove.includes(t)?" · řidič":""}</button>`).join("") : `<span class="note">Zatím bez zapsaného tripu</span>`}</div>
-      </article>`).join("")}</div>
-
+      </article>`).join("")}</div>`;
+  function fleetHTML(){ return `
     <div class="subhead"><h3>Vozový park</h3>
       <div class="sections" style="padding:0" role="group" aria-label="Řazení vozového parku">
         <span class="label">Řadit</span>${FLEET_SORTS.map(([k,l]) => `<button class="sec" data-sort="${k}" aria-selected="${k===fleetSort}">${l}${k===fleetSort?(fleetDir<0?" ↓":" ↑"):""}</button>`).join("")}
@@ -1323,7 +1330,7 @@ function viewMembers(){
     <div class="fleet-wrap"><table class="fleet">
       <thead><tr><th>Auto</th><th>Řidič</th><th>Válce</th><th class="n">Objem</th><th class="n">Výkon</th><th class="n">Hmotnost</th><th>Převodovka</th><th class="n">kg/k</th><th class="n">0–100</th><th class="n">Max.</th><th class="n">Tripy</th></tr></thead>
       <tbody>${rows.map(r => `<tr id="row-${r.k}"><td><button class="car-cell" data-car="${r.k}"><span class="car-pic">${carThumb(r)}${flag(r.k)}</span><span class="car-name">${esc(r.m)}${r.planned?` <span class="tag plan">${PLAN_LABEL}</span>`:""}</span></button></td><td>${r.owner ? esc(r.owner) : `<span class="note">Zatím nepřiřazeno</span>`}</td><td>${engineCell(r.k)}</td><td class="n">${r.l?litres(r.l):"–"}</td><td class="n">${r.hpApprox?"cca ":""}${r.hp} k</td><td class="n">${fmt(r.kg)} kg</td><td>${esc(r.gear||"–")}</td><td class="n">${fmt(+r.ratio.toFixed(1))}</td><td class="n">${r.acc?`${r.approx?"cca ":""}${r.acc.toLocaleString("cs",{minimumFractionDigits:1})} s`:"–"}</td><td class="n">${r.vmax?`${r.approx?"cca ":""}${fmt(r.vmax)} km/h`:"–"}</td><td class="n">${r.trips}</td></tr>`).join("")}</tbody>
-    </table></div>`;
+    </table></div>`; }
 }
 
 // Gray car icon used where a car has no photo yet.
@@ -1382,7 +1389,7 @@ function carCard(k){
   });
 })();
 
-const SECTIONS = {next:viewNext, past:viewPast, members:viewMembers};
+const SECTIONS = {next:viewNext, past:viewPast, members:() => viewMembers("people"), cars:() => viewMembers("cars")};
 function render(){
   document.querySelectorAll(".sections > .sec").forEach(b => b.setAttribute("aria-selected", b.dataset.sec===sec));
   document.getElementById("view").innerHTML = SECTIONS[sec]();
@@ -1427,6 +1434,7 @@ view.addEventListener("click", e => {
   else if (b.dataset.daymap){ lbList = [{src:b.dataset.daymap, cap:"Mapa trasy"}]; lbShow(0); }
   else if (b.dataset.car){ carCard(b.dataset.car); }
   else if (b.dataset.row){
+    if (!document.getElementById("row-" + b.dataset.row)) go("cars"); // garage links on Lidé jump to the Auta section
     const tr = document.getElementById("row-" + b.dataset.row); if (!tr) return;
     const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
     tr.scrollIntoView({block:"center", behavior: calm ? "auto" : "smooth"});
