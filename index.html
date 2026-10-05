@@ -125,6 +125,8 @@ button,input,textarea,select{font:inherit;color:inherit}
 .story{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px 20px}
 .story + .story{margin-top:12px}
 .story h3{font-size:23px;margin-top:6px}
+.story-del{background:none;border:0;padding:4px;margin:-4px -4px -4px 4px;color:var(--muted);cursor:pointer;border-radius:6px;display:inline-flex}
+.story-del:hover{color:#B3261E;background:var(--soft)}
 .story p{margin:8px 0 0;max-width:65ch}
 .byline{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .avatar{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font:600 12px/1 var(--mono);background:var(--ink);color:var(--surface);flex:none}
@@ -1104,7 +1106,7 @@ const STORY_DB = { url: "https://xmoitbckzeohebccsekg.supabase.co", key: "eyJhbG
 const sharedStories = {}; let storiesState = STORY_DB.url ? "loading" : "off";
 const dbHeaders = () => ({ apikey: STORY_DB.key, Authorization: `Bearer ${STORY_DB.key}`, "Content-Type": "application/json" });
 const storyDate = iso => { try { return new Date(iso).toLocaleDateString("cs-CZ", {day:"numeric", month:"numeric", year:"numeric"}); } catch(_) { return ""; } };
-const toStory = r => ({by:r.author, t:r.title, body:r.body, date:storyDate(r.created_at)});
+const toStory = r => ({id:r.id, by:r.author, t:r.title, body:r.body, date:storyDate(r.created_at)});
 function loadStories(){
   if (!STORY_DB.url) return;
   fetch(`${STORY_DB.url}/rest/v1/stories?select=*&order=created_at.desc`, {headers: dbHeaders()})
@@ -1114,6 +1116,21 @@ function loadStories(){
     .finally(() => { if (sec==="past" && pastTab==="stories") render(); });
 }
 loadStories();
+function deleteStory(id, btn){
+  if (!confirm("Opravdu smazat tento příběh?")) return;
+  let pass = store.get("story-pass");
+  if (!pass){ pass = prompt("Heslo party:") || ""; if (!pass) return; }
+  btn.disabled = true;
+  fetch(`${STORY_DB.url}/rest/v1/rpc/delete_story`, {method:"POST", headers: dbHeaders(), body: JSON.stringify({pass, story_id: id})})
+    .then(r => r.json().catch(() => ({})).then(j => ({ok: r.ok, j})))
+    .then(({ok, j}) => {
+      if (!ok) throw new Error(/password/.test(j.message||"") ? "pass" : "fail");
+      store.set("story-pass", pass);
+      for (const k in sharedStories) sharedStories[k] = sharedStories[k].filter(s => s.id !== id);
+      render();
+    })
+    .catch(err => { btn.disabled = false; if (err.message==="pass") store.set("story-pass", ""); alert(err.message==="pass" ? "Špatné heslo party." : "Příběh se nepodařilo smazat. Zkus to znovu."); });
+}
 function viewStories(t){
   const list = [...(sharedStories[t.id]||[]), ...t.stories];
   const carOf = n => { const c = t.crew.find(x => x[0]===n); return c && CARS[c[1]] ? CARS[c[1]].m : ""; };
@@ -1121,7 +1138,7 @@ function viewStories(t){
   return `<div class="stories">
     <div>${storiesState==="loading" && !list.length ? `<div class="empty">Načítám příběhy…</div>` : storiesState==="error" ? `<div class="empty">Příběhy se teď nepodařilo načíst. Zkus stránku obnovit.</div>` : list.length ? "" : `<div class="empty">Zatím žádné příběhy.</div>`}${list.map(s=>`
       <article class="story">
-        <div class="byline">${avatar(s.by)}<span class="who">${esc(s.by)}</span><span class="car">${esc(carOf(s.by))}</span><span class="label" style="margin-left:auto">${esc(s.date)}</span></div>
+        <div class="byline">${avatar(s.by)}<span class="who">${esc(s.by)}</span><span class="car">${esc(carOf(s.by))}</span><span class="label" style="margin-left:auto">${esc(s.date)}</span>${s.id!=null?`<button class="story-del" type="button" data-del-story="${s.id}" aria-label="Smazat příběh" title="Smazat příběh"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"/></svg></button>`:""}</div>
         <h3>${esc(s.t)}</h3><p>${esc(s.body)}</p>
       </article>`).join("")}</div>
     <form class="compose" id="compose">
@@ -1291,6 +1308,7 @@ document.querySelector(".sections").addEventListener("click", e => {
 const view = document.getElementById("view");
 view.addEventListener("click", e => {
   const b = e.target.closest("button"); if (!b) return;
+  if (b.dataset.delStory){ deleteStory(+b.dataset.delStory, b); return; }
   if (b.dataset.trip){ pastId = b.dataset.trip; if (pastTab==="roads" && !hasRoads(trip(pastId))) pastTab = "photos"; render(); }
   else if (b.dataset.tab){ pastTab = b.dataset.tab; render(); }
   else if (b.dataset.goto){ pastId = b.dataset.goto; pastTab = hasRoads(trip(pastId)) ? "roads" : "photos"; go("past"); window.scrollTo(0,0); }
