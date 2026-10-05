@@ -605,16 +605,17 @@ const TRIPS = [
     stories:[]
   },
   {
-    // Tom 2026-10-05: one-day trip "Tomovo rozlučka", 8 Sep 2024. Cars, crew and photos not known yet.
-    id:"rozlucka24", name:"Tomovo rozlučka", when:"8. září 2024", status:"done", days:1,
+    // Tom 2026-10-05: trip "Tomovo rozlučka", 8 Sep 2024 (album photos are dated 7–8 Sep; Tom asked about the dates). Video stills 002–004 and 007 left out.
+    id:"rozlucka24", cover:"photos/rozlucka24-009.webp", coverPos:"center 62%", name:"Tomovo rozlučka", when:"8. září 2024", status:"done", days:1,
     codrivers:["Jiří Tyc"], // Tom 2026-10-05: Jiří jel jako spolujezdec na všech tripech.
     // Tom 2026-10-05: on this trip people aren't split into drivers and co-drivers; one plain list.
     people:["Tom Stiborek","Jiří Tyc","Martin Vítovec","Jan Procházka","Otakar Doležal","Jan Verner","Petr Ježek","Matěj Pospíchal"],
-    blurb:"Jednodenní rozlučka. Auta a fotky ještě doplníme.",
+    blurb:"Rozlučka na louce: Patrol v terénu, stará modrá Octavia a motorka.",
     crew:[],
-    cars:[],
+    cars:["s60_t5","mx5nb18"],
     stages:[],
-    photos:[],
+    album:"https://photos.app.goo.gl/FRgBjGz7HGi2sptQA",
+    photos:[["001",1200,1600],["005",1200,1600],["006",1200,1600],["008",1600,1200],["009",1600,1200],["010",1600,1200]].map(([n,w,h]) => ({src:`photos/rozlucka24-${n}.webp`, thumb:`photos/rozlucka24-${n}-t.webp`, w, h})),
     stories:[]
   },
   {
