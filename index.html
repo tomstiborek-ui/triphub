@@ -504,7 +504,10 @@ const TRIPS = [
     cover:"photos/jaro27-cover.jpg", coverPos:"center 85%",
     blurb:"Jeseníky a hory na česko-polské hranici. Čekáme 5–6 aut: Porsche 944, MX-5 NC, MX-5 NA, dvakrát MX-5 NB a Legacy Turbo. Termín, sraz i trasy teprve plánujeme.",
     carsExpected:"5–6",
-    cars:["p944_27","mx5nc20","mx5na16","mx5nb18","mx5nb_jo","legacy1_20t"], km:0, crew:[], codrivers:[], photos:[], stages:[], stories:[],
+    cars:["p944_27","mx5nc20","mx5na16","mx5nb18","mx5nb_jo","legacy1_20t"], km:0,
+    // Tom 2026-10-05: list everybody from the group so far. Car null = driver whose car isn't known yet.
+    crew:[["Tom Stiborek","p944_27","in"],["Jan Verner","mx5nc20","in"],["Jindřich Šikl","mx5na16","in"],["Jan Procházka","mx5nb18","in"],["Jára Obdržálek","mx5nb_jo","in"],["Otakar Doležal","legacy1_20t","in"],["Petr Ježek",null,"in"],["Martin Vítovec",null,"in"]],
+    codrivers:["Jiří Tyc","Matěj Pospíchal","Richard Stránský","Matěj Tyc","Filip Doležal"], photos:[], stages:[], stories:[],
     checks:[{g:"Základ", items:["Karimatka","Spacák","Nabíječky","Moka konvice","Mlýnek na kafe","Kafe","Přenosný vařič","Vysílačka","Olej","Židličky"]}],
     days:[]
   },
@@ -833,15 +836,15 @@ function itinHTML(t){
 function viewNext(){
   const t = TRIPS.find(x => x.status === "next");
   if (!t) return `<div class="empty">Zatím není naplánovaný žádný trip. Pošli Claudovi odkazy z Mapy.cz na další trip a objeví se tady i s itinerářem.</div>`;
-  const inCount = t.crew.filter(c => c[2]==="in").length;
-  return hero(t, [t.depart ? ["Odjezd za", daysLeft(t), pl(daysLeft(t),"den","dny","dní"), "countdown"] : ["Odjezd za", "–", ""],["Vzdálenost",t.km?"≈"+fmt(t.km):"–",t.km?"km":""],["Aut jede",t.crew.length?inCount:(t.carsExpected||(t.cars||[]).length||"–"),t.crew.length?`z ${t.crew.length}`:""],["Dny",t.days.length||"–",""]]) + `
+  const inCount = t.crew.filter(c => c[2]==="in" && c[1]).length, carCrew = t.crew.filter(c => c[1]).length;
+  return hero(t, [t.depart ? ["Odjezd za", daysLeft(t), pl(daysLeft(t),"den","dny","dní"), "countdown"] : ["Odjezd za", "–", ""],["Vzdálenost",t.km?"≈"+fmt(t.km):"–",t.km?"km":""],["Aut jede",t.carsExpected||(t.crew.length?inCount:((t.cars||[]).length||"–")),!t.carsExpected&&t.crew.length?`z ${carCrew}`:""],["Dny",t.days.length||"–",""]]) + `
     ${meetCard(t)}
     <div class="subhead"><h3>Itinerář</h3></div>
     ${t.days.length ? routeBox(t,null) + itinHTML(t) : `<div class="empty">Trasy zatím plánujeme. Pošli Claudovi odkazy z Mapy.cz nebo GPX a itinerář se objeví tady.</div>`}
 
     <div class="subhead"><h3>Kdo jede</h3></div>
       <section class="panel">
-        <div class="rsvp">${t.crew.length?"":`<span class="note">Zatím nikdo.</span>`}${[...t.crew].sort((a,b)=>(a[2]==="out")-(b[2]==="out")).map(([n,car,s])=>`<div class="rsvp-row${s==="out"?" out":""}">${avatar(n)}<span>${esc(n)}</span><span class="car note">${esc(CARS[car].m)}</span><span class="st ${s}">${s==="in"?"Jede":s==="out"?"Nejede":"Možná"}</span></div>`).join("")}${(t.codrivers||[]).map(n=>`<div class="rsvp-row">${avatar(n)}<span>${esc(n)}</span><span class="car note">spolujezdec</span><span class="st in">Jede</span></div>`).join("")}${(t.codriversOut||[]).map(n=>`<div class="rsvp-row out">${avatar(n)}<span>${esc(n)}</span><span class="car note">spolujezdec</span><span class="st out">Nejede</span></div>`).join("")}</div>
+        <div class="rsvp">${t.crew.length?"":`<span class="note">Zatím nikdo.</span>`}${[...t.crew].sort((a,b)=>(a[2]==="out")-(b[2]==="out")).map(([n,car,s])=>`<div class="rsvp-row${s==="out"?" out":""}">${avatar(n)}<span>${esc(n)}</span><span class="car note">${car && CARS[car] ? esc(CARS[car].m) : "auto upřesníme"}</span><span class="st ${s}">${s==="in"?"Jede":s==="out"?"Nejede":"Možná"}</span></div>`).join("")}${(t.codrivers||[]).map(n=>`<div class="rsvp-row">${avatar(n)}<span>${esc(n)}</span><span class="car note">spolujezdec</span><span class="st in">Jede</span></div>`).join("")}${(t.codriversOut||[]).map(n=>`<div class="rsvp-row out">${avatar(n)}<span>${esc(n)}</span><span class="car note">spolujezdec</span><span class="st out">Nejede</span></div>`).join("")}</div>
       </section>
     ${checklist(t)}`;
 }
