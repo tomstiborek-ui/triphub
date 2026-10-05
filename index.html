@@ -1463,7 +1463,7 @@ function viewPlaces(){
         </div>
       </article>`).join("")}</div>` : `<div class="empty">Zatím žádná místa. Pošli Claudovi název a odkaz z Mapy.cz nebo Google Map a místo se tu objeví.</div>`}`;
 }
-// Small slippy map: integer zoom levels, drag to pan, wheel / double-click / pinch / buttons to zoom.
+// Small slippy map: integer zoom levels, drag to pan, double-click / pinch / buttons to zoom.
 function initPlacesMap(){
   const el = document.getElementById("pmap"); if (!el) return;
   const T = 256, tilesEl = el.querySelector(".pmap-tiles"), pinsEl = el.querySelector(".pmap-pins");
@@ -1523,8 +1523,7 @@ function initPlacesMap(){
     start = pts.size ? {cx:v.cx, cy:v.cy, pts:new Map([...pts].map(([k,p]) => [k, {...p}]))} : null;
   };
   el.addEventListener("pointerup", end); el.addEventListener("pointercancel", end);
-  let lastWheel = 0;
-  el.addEventListener("wheel", e => { e.preventDefault(); const now = Date.now(); if (now - lastWheel < 250) return; lastWheel = now; const r = el.getBoundingClientRect(); zoomAt(e.deltaY < 0 ? 1 : -1, e.clientX - r.left, e.clientY - r.top); }, {passive:false});
+  // No wheel zoom (Tom 2026-10-05): scrolling the page over the map must not zoom it; use +/−, double-click or pinch.
   el.addEventListener("dblclick", e => { if (e.target.closest("button,a")) return; const r = el.getBoundingClientRect(); zoomAt(1, e.clientX - r.left, e.clientY - r.top); });
   el.addEventListener("click", e => {
     const z = e.target.closest("[data-pzoom]"); if (z){ zoomAt(+z.dataset.pzoom); return; }
