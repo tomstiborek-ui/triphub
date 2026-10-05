@@ -490,10 +490,13 @@ const member = n => MEMBERS.find(p => p.n === n);
 
 const TRIPS = [
   {
-    // Next trip skeleton: dates, meeting point, crew, cars and routes still to come from Tom.
-    id:"jaro27", name:"Jaro 2027", when:"termín upřesníme", status:"next",
-    blurb:"Jarní trip 2027. Termín, sraz i trasy teprve plánujeme.",
-    cars:[], km:0, crew:[], codrivers:[], photos:[], stages:[], stories:[],
+    // Next trip (Tom 2026-10-05): spring 2027, Jeseníky and the Czech–Polish border; 5–6 cars expected.
+    // Cover drawn by trips/tools/mk_jaro27_cover.py. Cars: only the unambiguous ones; which NA and whose second NB is still open.
+    id:"jaro27", name:"Jaro 2027", when:"jaro 2027 · termín upřesníme", status:"next",
+    cover:"photos/jaro27-cover.jpg", coverPos:"center 85%",
+    blurb:"Jeseníky a hory na česko-polské hranici. Čekáme 5–6 aut: Porsche 944, MX-5 NC, MX-5 NA, dvakrát MX-5 NB a Legacy Turbo. Termín, sraz i trasy teprve plánujeme.",
+    carsExpected:"5–6",
+    cars:["p944_27","mx5nc20","mx5nb18","legacy1_20t"], km:0, crew:[], codrivers:[], photos:[], stages:[], stories:[],
     checks:[{g:"Základ", items:["Karimatka","Spacák","Nabíječky","Moka konvice","Mlýnek na kafe","Kafe","Přenosný vařič","Vysílačka","Olej","Židličky"]}],
     days:[]
   },
@@ -823,7 +826,7 @@ function viewNext(){
   const t = TRIPS.find(x => x.status === "next");
   if (!t) return `<div class="empty">Zatím není naplánovaný žádný trip. Pošli Claudovi odkazy z Mapy.cz na další trip a objeví se tady i s itinerářem.</div>`;
   const inCount = t.crew.filter(c => c[2]==="in").length;
-  return hero(t, [t.depart ? ["Odjezd za", daysLeft(t), pl(daysLeft(t),"den","dny","dní"), "countdown"] : ["Odjezd za", "–", ""],["Vzdálenost",t.km?"≈"+fmt(t.km):"–",t.km?"km":""],["Aut jede",t.crew.length?inCount:((t.cars||[]).length||"–"),t.crew.length?`z ${t.crew.length}`:""],["Dny",t.days.length||"–",""]]) + `
+  return hero(t, [t.depart ? ["Odjezd za", daysLeft(t), pl(daysLeft(t),"den","dny","dní"), "countdown"] : ["Odjezd za", "–", ""],["Vzdálenost",t.km?"≈"+fmt(t.km):"–",t.km?"km":""],["Aut jede",t.crew.length?inCount:(t.carsExpected||(t.cars||[]).length||"–"),t.crew.length?`z ${t.crew.length}`:""],["Dny",t.days.length||"–",""]]) + `
     ${meetCard(t)}
     <div class="subhead"><h3>Itinerář</h3></div>
     ${t.days.length ? routeBox(t,null) + itinHTML(t) : `<div class="empty">Trasy zatím plánujeme. Pošli Claudovi odkazy z Mapy.cz nebo GPX a itinerář se objeví tady.</div>`}
