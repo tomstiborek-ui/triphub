@@ -422,21 +422,29 @@ button.tag::after{content:"";position:absolute;inset:-12px -3px}
 .ppin i{transform:rotate(45deg);font:normal 700 13px/1 var(--body);color:#fff}
 .ppin.sel span{outline:3px solid var(--ink);outline-offset:1px}
 .pmap-zoom{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:4px}
-.pmap-zoom button{width:36px;height:36px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:20px;line-height:1;cursor:pointer}
+.pmap-zoom button{width:34px;height:34px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:20px;line-height:1;cursor:pointer}
 .pmap-attr{position:absolute;right:0;bottom:0;background:rgba(255,255,255,.85);color:#333;font-size:11px;padding:2px 6px;border-top-left-radius:6px}
 .pmap-attr a{color:#333}
 .pdot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px}
-.places{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin-top:12px}
-.place{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.places{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px;margin-top:12px;align-items:start}
+.place{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px;display:grid;grid-template-columns:72px 1fr;gap:12px;align-items:start}
 .place.sel{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
-.place h4{margin:0;font-size:17px}
-.place p{margin:0}
-.place-head{display:flex;gap:10px;align-items:center}
-.pnum{flex:none;display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;color:#fff;font-weight:700;font-size:13px}
-.place-addr{color:var(--muted);font-size:14px}
-.place .tags{display:flex;flex-wrap:wrap;gap:6px}
-.place-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
-.place-actions .btn{text-decoration:none}
+.place-pic{position:relative;width:72px;height:72px;border-radius:8px;overflow:hidden;background:color-mix(in srgb,var(--c) 14%,var(--surface));display:flex;align-items:center;justify-content:center;color:var(--c)}
+.place-pic img{width:100%;height:100%;object-fit:cover}
+.place-pic svg{width:30px;height:30px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.place-pic .pnum{position:absolute;left:3px;top:3px;width:20px;height:20px;font-size:11px;border:1.5px solid #fff}
+.place-body{min-width:0;display:flex;flex-direction:column;gap:3px}
+.place h4{margin:0;font-size:15px;line-height:1.25}
+.place p{margin:0;font-size:13px;color:var(--muted)}
+.place-meta{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.place-meta .label{font-size:10.5px}
+.pnum{flex:none;display:flex;align-items:center;justify-content:center;border-radius:50%;color:#fff;font-weight:700}
+.place .tags{display:flex;flex-wrap:wrap;gap:4px}
+.place-actions{display:flex;gap:6px;margin-top:4px}
+.ibtn{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;padding:0}
+.ibtn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.ibtn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.ibtn:hover{border-color:var(--accent)}
 </style>
 
 <div class="wrap">
@@ -1433,6 +1441,16 @@ const PLACES = [
   {id:"ecce-homo", n:"Vyhlídka Ecce Homo", cat:"vyhlidka", lat:49.7436063, lon:17.3179759},
   {id:"kross-house", n:"KROSS HOUSE", cat:"restaurace", lat:48.7501831, lon:17.5663108}
 ];
+// Line icons shown on a card when the place has no photo (img).
+const PLACE_ICON = {
+  kavarna:'<path d="M4 9h12v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M16 10h2a2.5 2.5 0 0 1 0 5h-2.3"/><path d="M8 3c0 1.5 1 1.5 1 3M12 3c0 1.5 1 1.5 1 3"/>',
+  restaurace:'<path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10"/><path d="M17 21V3c-2.2 1.2-3 3.5-3 7h3"/>',
+  hospoda:'<path d="M6 7h10v12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2z"/><path d="M16 10h2a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-2"/><path d="M6 7a2.5 2.5 0 0 1 3-3 3 3 0 0 1 5 .5A2.3 2.3 0 0 1 16 7"/>',
+  vyhlidka:'<path d="M2 20l7-11 4 6 3-4 6 9z"/><circle cx="17" cy="5" r="2"/>',
+  silnice:'<path d="M8 3L4 21M16 3l4 18M12 4v3M12 11v3M12 18v3"/>',
+  nocleh:'<path d="M3 18V7M3 13h18v5M21 13a3 3 0 0 0-3-3h-7v3"/><circle cx="7" cy="10.5" r="1.7"/>',
+  jine:'<path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/>'
+};
 let placeCat = "all", placeSel = null, pmapView = null;
 const placeCat_ = p => PLACE_CATS[p.cat] || PLACE_CATS.jine;
 const shownPlaces = () => PLACES.filter(p => placeCat === "all" || p.cat === placeCat);
@@ -1451,15 +1469,18 @@ function viewPlaces(){
     </div>
     ${list.length ? `<div class="places">${list.map((p,i) => `
       <article class="place${placeSel===p.id?" sel":""}" id="place-${p.id}">
-        <div class="place-head"><span class="pnum" style="background:${placeCat_(p).c}">${i+1}</span><div><h4>${esc(p.n)}</h4><span class="label">${placeCat_(p).l}</span></div></div>
-        ${p.addr ? `<div class="place-addr">${esc(p.addr)}${p.approx ? ` <span class="note">(poloha na mapě je přibližná)</span>` : ""}</div>` : ""}
-        ${p.note ? `<p>${esc(p.note)}</p>` : ""}
-        ${(p.trips||[]).length ? `<div class="tags">${p.trips.filter(id => trip(id)).map(id => `<button class="tag" data-goto="${id}">${esc(trip(id).name)}</button>`).join("")}</div>` : ""}
+        <div class="place-pic" style="--c:${placeCat_(p).c}">${p.img ? `<img src="${esc(p.img)}" alt="" loading="lazy">` : `<svg viewBox="0 0 24 24" aria-hidden="true">${PLACE_ICON[p.cat] || PLACE_ICON.jine}</svg>`}<span class="pnum" style="background:${placeCat_(p).c}">${i+1}</span></div>
+        <div class="place-body">
+          <h4>${esc(p.n)}</h4>
+          <div class="place-meta"><span class="label">${placeCat_(p).l}</span>${p.addr ? ` · ${esc(p.addr)}${p.approx ? " (přibližně)" : ""}` : ""}</div>
+          ${p.note ? `<p>${esc(p.note)}</p>` : ""}
+          ${(p.trips||[]).filter(id => trip(id)).length ? `<div class="tags">${p.trips.filter(id => trip(id)).map(id => `<button class="tag" data-goto="${id}">${esc(trip(id).name)}</button>`).join("")}</div>` : ""}
         <div class="place-actions">
-          <a class="btn" href="${navMapy(p)}" target="_blank" rel="noopener">Navigovat (Mapy.cz) ↗</a>
-          <a class="btn ghost" href="${navGoogle(p)}" target="_blank" rel="noopener">Google Mapy ↗</a>
-          <button class="btn ghost" type="button" data-pshow="${p.id}">Ukázat na mapě</button>
-          ${p.web ? `<a class="btn ghost" href="${esc(p.web)}" target="_blank" rel="noopener">Web ↗</a>` : ""}
+          <a class="ibtn primary" href="${navMapy(p)}" target="_blank" rel="noopener" title="Navigovat (Mapy.cz)" aria-label="Navigovat v Mapy.cz"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l18-8-8 18-2-8z"/></svg></a>
+          <a class="ibtn" href="${navGoogle(p)}" target="_blank" rel="noopener" title="Google Mapy" aria-label="Navigovat v Google Mapách"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg></a>
+          <button class="ibtn" type="button" data-pshow="${p.id}" title="Ukázat na mapě" aria-label="Ukázat na mapě"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
+          ${p.web ? `<a class="ibtn" href="${esc(p.web)}" target="_blank" rel="noopener" title="Web" aria-label="Web"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.2 3 14.8 0 18M12 3c-3 3.2-3 14.8 0 18"/></svg></a>` : ""}
+        </div>
         </div>
       </article>`).join("")}</div>` : `<div class="empty">Zatím žádná místa. Pošli Claudovi název a odkaz z Mapy.cz nebo Google Map a místo se tu objeví.</div>`}`;
 }
