@@ -253,6 +253,7 @@ button,input,textarea,select{font:inherit;color:inherit}
 .gcar .model{font-weight:600;font-size:14px;text-align:left;padding:0;background:none;border:0;color:inherit;cursor:pointer;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
 .flag{display:inline-block;width:20px;height:13px;border-radius:2px;box-shadow:0 0 0 1px rgba(0,0,0,.18);vertical-align:-1px;margin-right:7px;flex:none}
 .member-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.member > .tags{display:flex;flex-wrap:wrap;gap:6px}
 .fleet tr.flash td{animation:rowflash 2s ease-out}
 @keyframes rowflash{0%,40%{background:var(--go-bg)}100%{background:transparent}}
 /* Forecast sits beside the stops on wide screens, below them on narrow ones. */
@@ -1247,10 +1248,11 @@ function viewMembers(){
       </article>`).join("")}</div>
 
     <div class="subhead"><h3>Spolujezdci</h3></div>
-    <div class="members">${CODRIVERS.map(p => `
+    <div class="members">${CODRIVERS.map(p => ({...p, ts: past.filter(t => (t.codrivers||[]).includes(p.n) && !coOut(t,p.n))})).map(p => `
       <article class="member">
         <div class="top-row">${avatar(p.n)}<div><div class="name">${esc(p.n)}</div>${(p.isNew || (next && ((next.codrivers||[]).includes(p.n) || coOut(next,p.n)))) ? `<div class="member-tags">${next && (next.codrivers||[]).includes(p.n)?`<span class="tag next">Jede: ${esc(next.name)}</span>`:next && coOut(next,p.n)?`<span class="tag out">Nejede: ${esc(next.name)}</span>`:""}${p.isNew?`<span class="tag">Nově letos</span>`:""}</div>`:""}
-          <div class="meta">Spolujezdec</div></div></div>
+          <div class="meta">Spolujezdec · ${p.ts.length} ${pl(p.ts.length,"trip","tripy","tripů")}</div></div></div>
+        <div class="tags">${p.ts.length ? p.ts.map(t => `<button class="tag" data-goto="${t.id}">${esc(t.name)}</button>`).join("") : `<span class="note">Zatím bez zapsaného tripu</span>`}</div>
       </article>`).join("")}</div>
 
     <div class="subhead"><h3>Vozový park</h3>
