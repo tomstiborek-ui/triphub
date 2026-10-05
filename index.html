@@ -1100,7 +1100,7 @@ function lbShow(i){
 }
 
 // Shared stories live in Supabase (setup SQL: project files site/stories.sql). Empty url = not connected yet.
-const STORY_DB = { url: "", key: "" };
+const STORY_DB = { url: "https://xmoitbckzeohebccsekg.supabase.co", key: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhtb2l0YmNremVvaGViY2NzZWtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTExOTg0ODMsImV4cCI6MjEwNjc3NDQ4M30.JwPBB_buBy-41VCm-V7MHHsDc6vi7zmctKDtyLXDWH8" };
 const sharedStories = {}; let storiesState = STORY_DB.url ? "loading" : "off";
 const dbHeaders = () => ({ apikey: STORY_DB.key, Authorization: `Bearer ${STORY_DB.key}`, "Content-Type": "application/json" });
 const storyDate = iso => { try { return new Date(iso).toLocaleDateString("cs-CZ", {day:"numeric", month:"numeric", year:"numeric"}); } catch(_) { return ""; } };
