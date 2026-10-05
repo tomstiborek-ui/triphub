@@ -441,7 +441,9 @@ const MEMBERS = [
   {n:"Martin Vítovec", c:"#8E5572", cars:["mini_cs","e46_325i"]},
   {n:"Jan Procházka", c:"#C17C28", cars:["mx5nb18"]},
   {n:"Jan Verner", c:"#4F5D75", cars:["mx5nc20"]},
-  {n:"Jindřich Šikl", c:"#6B8F71", cars:["mx5na16"]}
+  {n:"Jindřich Šikl", c:"#6B8F71", cars:["mx5na16"]},
+  // Tom 2026-10-05: Jára is getting an NB for Jaro 2027 (he's also listed as a co-driver from Podzim 2026).
+  {n:"Jára Obdržálek", c:"#7A6C5D", cars:["mx5nb_jo"]}
 ];
 // Co-drivers (spolujezdci); isNew = first season with us.
 const CODRIVERS = [
@@ -468,6 +470,8 @@ const CARS = {
   mx5na18: {m:"Mazda MX-5 NA 1.8", hp:131, kg:990, l:1.8, gear:"manuál", img:"cars/mx5-na18.webp"},
   mx5na16: {m:"Mazda MX-5 NA 1.6", hp:116, kg:955, l:1.6, gear:"manuál", img:"cars/mx5-na16.webp"},
   mx5nb18: {m:"Mazda MX-5 NB 1.8", hp:146, kg:1065, l:1.8, gear:"manuál", img:"cars/mx5-nb18.webp"},
+  // Jára's NB (Tom 2026-10-05). Engine not known yet: NB 1.8 figures assumed, shown as approximate.
+  mx5nb_jo: {m:"Mazda MX-5 NB", hp:146, hpApprox:true, kg:1065, l:1.8, gear:"manuál"},
   mx5nc20: {m:"Mazda MX-5 NC 2.0 PRHT", hp:160, kg:1190, l:2.0, gear:"manuál", img:"cars/mx5-nc-e.webp"},
   saab95aero: {m:"Saab 9-5 Aero 2.3 Turbo", hp:250, kg:1550, l:2.3, gear:"manuál", img:"cars/saab-95-aero.webp"},
   // Tuned engine: about 200 hp per Tom.
@@ -491,12 +495,12 @@ const member = n => MEMBERS.find(p => p.n === n);
 const TRIPS = [
   {
     // Next trip (Tom 2026-10-05): spring 2027, Jeseníky and the Czech–Polish border; 5–6 cars expected.
-    // Cover drawn by trips/tools/mk_jaro27_cover.py. Cars: only the unambiguous ones; which NA and whose second NB is still open.
+    // Cover drawn by trips/tools/mk_jaro27_cover.py. NA = Jindřich's 1.6, second NB = Jára's (Tom 2026-10-05).
     id:"jaro27", name:"Jaro 2027", when:"jaro 2027 · termín upřesníme", status:"next",
     cover:"photos/jaro27-cover.jpg", coverPos:"center 85%",
     blurb:"Jeseníky a hory na česko-polské hranici. Čekáme 5–6 aut: Porsche 944, MX-5 NC, MX-5 NA, dvakrát MX-5 NB a Legacy Turbo. Termín, sraz i trasy teprve plánujeme.",
     carsExpected:"5–6",
-    cars:["p944_27","mx5nc20","mx5nb18","legacy1_20t"], km:0, crew:[], codrivers:[], photos:[], stages:[], stories:[],
+    cars:["p944_27","mx5nc20","mx5na16","mx5nb18","mx5nb_jo","legacy1_20t"], km:0, crew:[], codrivers:[], photos:[], stages:[], stories:[],
     checks:[{g:"Základ", items:["Karimatka","Spacák","Nabíječky","Moka konvice","Mlýnek na kafe","Kafe","Přenosný vařič","Vysílačka","Olej","Židličky"]}],
     days:[]
   },
