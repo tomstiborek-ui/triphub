@@ -609,7 +609,7 @@ const TRIPS = [
     id:"rozlucka24", name:"Tomovo rozlučka", when:"8. září 2024", status:"done", days:1,
     codrivers:["Jiří Tyc"], // Tom 2026-10-05: Jiří jel jako spolujezdec na všech tripech.
     // Tom 2026-10-05: on this trip people aren't split into drivers and co-drivers; one plain list.
-    people:["Tom Stiborek","Jiří Tyc","Martin Vítovec","Jan Procházka","Otakar Doležal","Jan Verner","Petr Ježek"],
+    people:["Tom Stiborek","Jiří Tyc","Martin Vítovec","Jan Procházka","Otakar Doležal","Jan Verner","Petr Ježek","Matěj Pospíchal"],
     blurb:"Jednodenní rozlučka. Auta a fotky ještě doplníme.",
     crew:[],
     cars:[],
@@ -1297,7 +1297,7 @@ function viewMembers(){
       </article>`).join("")}</div>
 
     <div class="subhead"><h3>Spolujezdci</h3></div>
-    <div class="members">${CODRIVERS.map(p => ({...p, ts: past.filter(t => (t.codrivers||[]).includes(p.n) && !coOut(t,p.n))})).map(p => `
+    <div class="members">${CODRIVERS.map(p => ({...p, ts: past.filter(t => ((t.codrivers||[]).includes(p.n) && !coOut(t,p.n)) || (t.people||[]).includes(p.n))})).map(p => `
       <article class="member">
         <div class="top-row">${avatar(p.n)}<div><div class="name">${esc(p.n)}</div>${(p.isNew || (next && ((next.codrivers||[]).includes(p.n) || coOut(next,p.n)))) ? `<div class="member-tags">${next && (next.codrivers||[]).includes(p.n)?`<span class="tag next">Jede: ${esc(next.name)}</span>`:next && coOut(next,p.n)?`<span class="tag out">Nejede: ${esc(next.name)}</span>`:""}${p.isNew?`<span class="tag">Nově letos</span>`:""}</div>`:""}
           <div class="meta">Spolujezdec · ${p.ts.length} ${pl(p.ts.length,"trip","tripy","tripů")}</div></div></div>
