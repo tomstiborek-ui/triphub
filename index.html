@@ -1428,7 +1428,10 @@ const PLACES = [
   {id:"manolo", n:"Manolo Café", cat:"kavarna", lat:49.3967, lon:15.5803, approx:true, addr:"Vrchlického 1971/25, Jihlava",
    note:"Sraz před tripem Podzim 2026. Kafe, než vyrazíme.", trips:["podzim26"], web:"https://www.instagram.com/manolo.jihlava/"},
   // Tom 2026-10-05: Google Maps place link; coordinates from the link.
-  {id:"bistro-u-maminky", n:"Bistro u maminky", cat:"restaurace", lat:50.0282037, lon:16.602042}
+  {id:"bistro-u-maminky", n:"Bistro u maminky", cat:"restaurace", lat:50.0282037, lon:16.602042},
+  // Tom 2026-10-05: two more from Google Maps place links (coordinates = the place pin, !3d/!4d).
+  {id:"ecce-homo", n:"Vyhlídka Ecce Homo", cat:"vyhlidka", lat:49.7436063, lon:17.3179759},
+  {id:"kross-house", n:"KROSS HOUSE", cat:"restaurace", lat:48.7501831, lon:17.5663108}
 ];
 let placeCat = "all", placeSel = null, pmapView = null;
 const placeCat_ = p => PLACE_CATS[p.cat] || PLACE_CATS.jine;
