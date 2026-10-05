@@ -307,6 +307,10 @@ button,input,textarea,select{font:inherit;color:inherit}
 .trip-person .avatar{width:32px;height:32px;font-size:12px}
 .trip-person > span:last-child{display:flex;flex-direction:column;gap:2px}
 .trip-person small{font:500 10.5px/1 var(--mono);text-transform:uppercase;letter-spacing:.08em;color:#B8C5D1}
+.trip-car.plan{border-style:dashed}
+.trip-car.plan > span{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left}
+.trip-car.plan small{font:500 10.5px/1 var(--mono);text-transform:uppercase;letter-spacing:.08em;color:#F2D79B}
+.tag.plan{border:1px dashed currentColor;background:transparent;color:var(--muted);cursor:default;white-space:nowrap}
 .trip-car.out small{font:500 10.5px/1 var(--mono);text-transform:uppercase;letter-spacing:.08em;color:#F2B8A8}
 .car-cell{display:flex;align-items:center;gap:12px;width:100%;padding:0;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}
 .car-cell .car-name{text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
@@ -470,8 +474,8 @@ const CARS = {
   mx5na18: {m:"Mazda MX-5 NA 1.8", hp:131, kg:990, l:1.8, gear:"manuál", img:"cars/mx5-na18.webp"},
   mx5na16: {m:"Mazda MX-5 NA 1.6", hp:116, kg:955, l:1.6, gear:"manuál", img:"cars/mx5-na16.webp"},
   mx5nb18: {m:"Mazda MX-5 NB 1.8", hp:146, kg:1065, l:1.8, gear:"manuál", img:"cars/mx5-nb18.webp"},
-  // Jára's NB (Tom 2026-10-05). Engine not known yet: NB 1.8 figures assumed, shown as approximate.
-  mx5nb_jo: {m:"Mazda MX-5 NB", hp:146, hpApprox:true, kg:1065, l:1.8, gear:"manuál"},
+  // Jára's NB (Tom 2026-10-05): not bought yet, so planned:true shows it as "Plánovaný nákup". Engine not known yet: NB 1.8 figures assumed, shown as approximate.
+  mx5nb_jo: {m:"Mazda MX-5 NB", planned:true, hp:146, hpApprox:true, kg:1065, l:1.8, gear:"manuál"},
   mx5nc20: {m:"Mazda MX-5 NC 2.0 PRHT", hp:160, kg:1190, l:2.0, gear:"manuál", img:"cars/mx5-nc-e.webp"},
   saab95aero: {m:"Saab 9-5 Aero 2.3 Turbo", hp:250, kg:1550, l:2.3, gear:"manuál", img:"cars/saab-95-aero.webp"},
   // Tuned engine: about 200 hp per Tom.
@@ -740,7 +744,7 @@ const carOut = (t,k) => t.crew.some(c => c[1]===k && c[2]==="out");
 const coOut = (t,n) => (t.codriversOut||[]).includes(n);
 function tripCars(t){
   const ks = (t.cars||[]).filter(k => CARS[k]).sort((a,b) => carOut(t,a) - carOut(t,b));
-  return ks.length ? `<div class="trip-cars"><span class="label">${t.status==="next"?"Auta, která jedou":"Auta na tripu"}</span>${ks.map(k => carOut(t,k) ? `<button class="trip-car out" data-car="${k}" aria-label="${esc(CARS[k].m)}, nejede">${carThumb(CARS[k])}<span><s>${esc(CARS[k].m)}</s><small>Nejede</small></span></button>` : `<button class="trip-car" data-car="${k}">${carThumb(CARS[k])}<span>${esc(CARS[k].m)}</span></button>`).join("")}</div>` : "";
+  return ks.length ? `<div class="trip-cars"><span class="label">${t.status==="next"?"Auta, která jedou":"Auta na tripu"}</span>${ks.map(k => carOut(t,k) ? `<button class="trip-car out" data-car="${k}" aria-label="${esc(CARS[k].m)}, nejede">${carThumb(CARS[k])}<span><s>${esc(CARS[k].m)}</s><small>Nejede</small></span></button>` : CARS[k].planned ? `<button class="trip-car plan" data-car="${k}" aria-label="${esc(CARS[k].m)}, ${PLAN_LABEL.toLowerCase()}">${carThumb(CARS[k])}<span>${esc(CARS[k].m)}<small>${PLAN_LABEL}</small></span></button>` : `<button class="trip-car" data-car="${k}">${carThumb(CARS[k])}<span>${esc(CARS[k].m)}</span></button>`).join("")}</div>` : "";
 }
 // People on a past trip: drivers from crew (or the owners of the trip's cars when crew isn't recorded), then co-drivers.
 function tripPeople(t){
@@ -1272,7 +1276,7 @@ function viewMembers(){
         <div class="garage">${p.cars.map(({k,ts,nx,nxOut}) => `
           <div class="gcar">
             <button class="model" data-row="${k}" aria-label="${esc(CARS[k].m)}: ukázat v tabulce aut">${flag(k)}${esc(CARS[k].m)}</button>
-            <span class="tags">${nx ? `<span class="tag next">Jede: ${esc(next.name)}</span>`:nxOut ? `<span class="tag out">Nejede: ${esc(next.name)}</span>`:""}${ts.map(t => `<button class="tag" data-goto="${t.id}">${esc(t.name)}</button>`).join("")}${!nx && !nxOut && !ts.length ? `<span class="note">Zatím bez tripu</span>`:""}</span>
+            <span class="tags">${planTag(k)}${nx ? `<span class="tag next">Jede: ${esc(next.name)}</span>`:nxOut ? `<span class="tag out">Nejede: ${esc(next.name)}</span>`:""}${ts.map(t => `<button class="tag" data-goto="${t.id}">${esc(t.name)}</button>`).join("")}${!nx && !nxOut && !ts.length ? `<span class="note">Zatím bez tripu</span>`:""}</span>
           </div>`).join("")}</div>
       </article>`).join("")}</div>
 
@@ -1290,7 +1294,7 @@ function viewMembers(){
       </div></div>
     <div class="fleet-wrap"><table class="fleet">
       <thead><tr><th>Auto</th><th>Řidič</th><th>Válce</th><th class="n">Objem</th><th class="n">Výkon</th><th class="n">Hmotnost</th><th>Převodovka</th><th class="n">kg/k</th><th class="n">0–100</th><th class="n">Max.</th><th class="n">Tripy</th></tr></thead>
-      <tbody>${rows.map(r => `<tr id="row-${r.k}"><td><button class="car-cell" data-car="${r.k}"><span class="car-pic">${carThumb(r)}${flag(r.k)}</span><span class="car-name">${esc(r.m)}</span></button></td><td>${r.owner ? esc(r.owner) : `<span class="note">Zatím nepřiřazeno</span>`}</td><td>${engineCell(r.k)}</td><td class="n">${r.l?litres(r.l):"–"}</td><td class="n">${r.hpApprox?"cca ":""}${r.hp} k</td><td class="n">${fmt(r.kg)} kg</td><td>${esc(r.gear||"–")}</td><td class="n">${fmt(+r.ratio.toFixed(1))}</td><td class="n">${r.acc?`${r.approx?"cca ":""}${r.acc.toLocaleString("cs",{minimumFractionDigits:1})} s`:"–"}</td><td class="n">${r.vmax?`${r.approx?"cca ":""}${fmt(r.vmax)} km/h`:"–"}</td><td class="n">${r.trips}</td></tr>`).join("")}</tbody>
+      <tbody>${rows.map(r => `<tr id="row-${r.k}"><td><button class="car-cell" data-car="${r.k}"><span class="car-pic">${carThumb(r)}${flag(r.k)}</span><span class="car-name">${esc(r.m)}${r.planned?` <span class="tag plan">${PLAN_LABEL}</span>`:""}</span></button></td><td>${r.owner ? esc(r.owner) : `<span class="note">Zatím nepřiřazeno</span>`}</td><td>${engineCell(r.k)}</td><td class="n">${r.l?litres(r.l):"–"}</td><td class="n">${r.hpApprox?"cca ":""}${r.hp} k</td><td class="n">${fmt(r.kg)} kg</td><td>${esc(r.gear||"–")}</td><td class="n">${fmt(+r.ratio.toFixed(1))}</td><td class="n">${r.acc?`${r.approx?"cca ":""}${r.acc.toLocaleString("cs",{minimumFractionDigits:1})} s`:"–"}</td><td class="n">${r.vmax?`${r.approx?"cca ":""}${fmt(r.vmax)} km/h`:"–"}</td><td class="n">${r.trips}</td></tr>`).join("")}</tbody>
     </table></div>`;
 }
 
@@ -1315,10 +1319,12 @@ function engineIcon(cfg){
   return `<svg class="eng-ico" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" role="img" aria-label="${cfg.name}"><title>${cfg.name}</title>${ENG_GLYPH[cfg.type]}</svg>`;
 }
 const engineCell = k => { const e = engineCfg(k); return e ? `<span class="eng">${engineIcon(e)}<span>${e.code}</span></span>` : "–"; };
+const PLAN_LABEL = "Plánovaný nákup";
+const planTag = k => CARS[k] && CARS[k].planned ? `<span class="tag plan">${PLAN_LABEL}</span>` : "";
 const carThumb = (c, cls) => c.img ? `<img${cls?` class="${cls}"`:""} src="${c.img}" alt="${cls==="cc-photo"?esc(c.m):""}" loading="lazy">` : `<span class="car-ph${cls?" "+cls:""}" role="img" aria-label="Zatím bez fotky">${CAR_ICON}</span>`;
 function carCard(k){
   const c = CARS[k], i = CAR_INFO[k] || {}, e = i.engine || {}, pf = i.perf || {};
-  const specs = [["Majitel", ownerOf(k)], ["Země původu", COUNTRY[originOf(k)]], ["Motor", e.code], ["Válce", engineCfg(k) ? engineCfg(k).code + " · " + engineCfg(k).name : ""], ["Uspořádání", e.layout], ["Objem", e.cc ? fmt(e.cc)+" cm³" : (c.l ? litres(c.l) : "")],
+  const specs = [["Majitel", ownerOf(k) && c.planned ? `${ownerOf(k)} (${PLAN_LABEL.toLowerCase()})` : ownerOf(k)], ["Země původu", COUNTRY[originOf(k)]], ["Motor", e.code], ["Válce", engineCfg(k) ? engineCfg(k).code + " · " + engineCfg(k).name : ""], ["Uspořádání", e.layout], ["Objem", e.cc ? fmt(e.cc)+" cm³" : (c.l ? litres(c.l) : "")],
     ["Výkon", (e.hp||c.hp) ? `${c.hpApprox?"cca ":""}${e.hp||c.hp} k` : ""], ["Točivý moment", e.nm ? fmt(e.nm)+" Nm" : "–"], ["Pohon", e.drive],
     ["Převodovka", c.gear], ["Hmotnost", c.kg ? fmt(c.kg)+" kg" : ""], ["kg/k", c.kg && c.hp ? fmt(+(c.kg/c.hp).toFixed(1)) : ""],
     ["0–100 km/h", pf.acc ? `${pf.approx?"cca ":""}${pf.acc.toLocaleString("cs",{minimumFractionDigits:1})} s` : ""], ["Max. rychlost", pf.vmax ? `${pf.approx?"cca ":""}${fmt(pf.vmax)} km/h` : ""]];
