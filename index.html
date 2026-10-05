@@ -302,6 +302,11 @@ button,input,textarea,select{font:inherit;color:inherit}
 .trip-car.out img,.trip-car.out .car-ph{filter:grayscale(1);opacity:.55}
 .trip-car.out span{display:flex;flex-direction:column;gap:2px}
 .trip-car.out s{opacity:.7;text-decoration-thickness:1px}
+.trip-people{margin-top:0;padding-top:14px;border-top:0}
+.trip-person{display:inline-flex;align-items:center;gap:8px;padding:4px 14px 4px 4px;border:1px solid rgba(255,255,255,.28);border-radius:999px;background:rgba(20,27,33,.55);color:#F2F5F8;font-size:14px;font-weight:500;line-height:1.2}
+.trip-person .avatar{width:32px;height:32px;font-size:12px}
+.trip-person > span:last-child{display:flex;flex-direction:column;gap:2px}
+.trip-person small{font:500 10.5px/1 var(--mono);text-transform:uppercase;letter-spacing:.08em;color:#B8C5D1}
 .trip-car.out small{font:500 10.5px/1 var(--mono);text-transform:uppercase;letter-spacing:.08em;color:#F2B8A8}
 .car-cell{display:flex;align-items:center;gap:12px;width:100%;padding:0;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}
 .car-cell .car-name{text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
@@ -662,7 +667,7 @@ function hero(t, stats){
     </div>
     <div class="stats">${stats.map(([k,v,u,cls]) => `<div class="stat"><div class="label">${k}</div>
       <div class="v ${cls||""}">${v}${u?`<small>${u}</small>`:""}</div></div>`).join("")}</div>
-    ${tripCars(t)}</div>
+    ${tripCars(t)}${tripPeople(t)}</div>
   </section>`;
 }
 
@@ -729,6 +734,14 @@ const coOut = (t,n) => (t.codriversOut||[]).includes(n);
 function tripCars(t){
   const ks = (t.cars||[]).filter(k => CARS[k]).sort((a,b) => carOut(t,a) - carOut(t,b));
   return ks.length ? `<div class="trip-cars"><span class="label">${t.status==="next"?"Auta, která jedou":"Auta na tripu"}</span>${ks.map(k => carOut(t,k) ? `<button class="trip-car out" data-car="${k}" aria-label="${esc(CARS[k].m)}, nejede">${carThumb(CARS[k])}<span><s>${esc(CARS[k].m)}</s><small>Nejede</small></span></button>` : `<button class="trip-car" data-car="${k}">${carThumb(CARS[k])}<span>${esc(CARS[k].m)}</span></button>`).join("")}</div>` : "";
+}
+// People on a past trip: drivers from crew (or the owners of the trip's cars when crew isn't recorded), then co-drivers.
+function tripPeople(t){
+  if (t.status === "next") return "";
+  const drivers = t.crew.length ? t.crew.filter(c => c[2]!=="out").map(c => c[0]) : (t.cars||[]).map(ownerOf).filter(Boolean);
+  const people = [...new Set(drivers)].map(n => [n, "Řidič"]);
+  (t.codrivers||[]).filter(n => !coOut(t,n) && !people.some(p => p[0]===n)).forEach(n => people.push([n, "Spolujezdec"]));
+  return people.length ? `<div class="trip-cars trip-people"><span class="label">Posádka · ${people.length} ${pl(people.length,"člověk","lidé","lidí")}</span>${people.map(([n,role]) => `<span class="trip-person">${avatar(n)}<span>${esc(n)}<small>${role}</small></span></span>`).join("")}</div>` : "";
 }
 /* ---------- Weather (Open-Meteo, loaded live in the viewer's browser) ---------- */
 const WX_TEXT = c => c===0?"Jasno":c===1?"Skoro jasno":c===2?"Polojasno":c===3?"Zataženo":c<=48?"Mlha":c<=57?"Mrholení":c<=67?(c===65?"Silný déšť":c===61?"Slabý déšť":"Déšť"):c<=77?"Sněžení":c<=82?"Přeháňky":c<=86?"Sněhové přeháňky":"Bouřky";
