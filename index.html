@@ -410,6 +410,33 @@ button.tag::after{content:"";position:absolute;inset:-12px -3px}
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
 }
+/* Místa: live OSM map + list */
+.pmap{position:relative;height:min(60vh,460px);min-height:280px;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#E8E4DC;touch-action:none;cursor:grab;user-select:none}
+.pmap:active{cursor:grabbing}
+.pmap-tiles,.pmap-pins{position:absolute;inset:0;transform-origin:0 0}
+.pmap-tiles img{position:absolute;left:0;top:0;width:256px;height:256px;max-width:none}
+:root[data-theme="dark"] .pmap-tiles img{filter:brightness(.8) contrast(1.1)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .pmap-tiles img{filter:brightness(.8) contrast(1.1)}}
+.ppin{position:absolute;width:30px;height:30px;margin:-30px 0 0 -15px;border:0;padding:0;background:none;cursor:pointer}
+.ppin span{display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:var(--c);border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35)}
+.ppin i{transform:rotate(45deg);font:normal 700 13px/1 var(--body);color:#fff}
+.ppin.sel span{outline:3px solid var(--ink);outline-offset:1px}
+.pmap-zoom{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:4px}
+.pmap-zoom button{width:36px;height:36px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:20px;line-height:1;cursor:pointer}
+.pmap-attr{position:absolute;right:0;bottom:0;background:rgba(255,255,255,.85);color:#333;font-size:11px;padding:2px 6px;border-top-left-radius:6px}
+.pmap-attr a{color:#333}
+.pdot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px}
+.places{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin-top:12px}
+.place{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.place.sel{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.place h4{margin:0;font-size:17px}
+.place p{margin:0}
+.place-head{display:flex;gap:10px;align-items:center}
+.pnum{flex:none;display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;color:#fff;font-weight:700;font-size:13px}
+.place-addr{color:var(--muted);font-size:14px}
+.place .tags{display:flex;flex-wrap:wrap;gap:6px}
+.place-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.place-actions .btn{text-decoration:none}
 </style>
 
 <div class="wrap">
@@ -423,6 +450,7 @@ button.tag::after{content:"";position:absolute;inset:-12px -3px}
       <button class="sec" role="tab" id="sec-past" data-sec="past">Minulé tripy</button>
       <button class="sec" role="tab" id="sec-members" data-sec="members">Lidé</button>
       <button class="sec" role="tab" id="sec-cars" data-sec="cars">Auta</button>
+      <button class="sec" role="tab" id="sec-places" data-sec="places">Místa</button>
     </nav>
   </header>
 
@@ -1389,11 +1417,126 @@ function carCard(k){
   });
 })();
 
-const SECTIONS = {next:viewNext, past:viewPast, members:() => viewMembers("people"), cars:() => viewMembers("cars")};
+/* ---------- Místa (points of interest), Tom 2026-10-05 ---------- */
+// Places the group likes: shown on a live OpenStreetMap map (tiles load in the visitor's browser) and as a list with navigation links.
+// approx:true = pin position is approximate, so navigation goes by address instead of coordinates.
+const PLACE_CATS = {
+  kavarna:{l:"Kavárna", c:"#8A5A2B"}, restaurace:{l:"Restaurace", c:"#A9561F"}, hospoda:{l:"Hospoda", c:"#B08A1E"},
+  vyhlidka:{l:"Vyhlídka", c:"#3E7B55"}, silnice:{l:"Silnice", c:"#2F5D8A"}, nocleh:{l:"Nocleh", c:"#6B4E8A"}, jine:{l:"Jiné", c:"#5F6D78"}
+};
+const PLACES = [
+  {id:"manolo", n:"Manolo Café", cat:"kavarna", lat:49.3967, lon:15.5803, approx:true, addr:"Vrchlického 1971/25, Jihlava",
+   note:"Sraz před tripem Podzim 2026. Kafe, než vyrazíme.", trips:["podzim26"], web:"https://www.instagram.com/manolo.jihlava/"}
+];
+let placeCat = "all", placeSel = null, pmapView = null;
+const placeCat_ = p => PLACE_CATS[p.cat] || PLACE_CATS.jine;
+const shownPlaces = () => PLACES.filter(p => placeCat === "all" || p.cat === placeCat);
+const navMapy = p => p.approx ? `https://mapy.com/fnc/v1/search?query=${encodeURIComponent(p.addr)}` : `https://mapy.com/fnc/v1/route?end=${p.lon},${p.lat}&routeType=car_fast`;
+const navGoogle = p => `https://www.google.com/maps/dir/?api=1&travelmode=driving&destination=${encodeURIComponent(p.approx ? p.addr : p.lat + "," + p.lon)}`;
+function viewPlaces(){
+  const cats = Object.keys(PLACE_CATS).filter(k => PLACES.some(p => p.cat === k));
+  const list = shownPlaces();
+  return `
+    <div class="subhead"><h3>Místa</h3><span class="note">${PLACES.length} ${pl(PLACES.length,"místo","místa","míst")} · kavárny, restaurace a další zastávky, kam se rádi vracíme</span></div>
+    ${cats.length > 1 ? `<div class="sections" role="group" aria-label="Kategorie míst"><button class="sec" data-pcat="all" aria-selected="${placeCat==="all"}">Vše</button>${cats.map(k => `<button class="sec" data-pcat="${k}" aria-selected="${placeCat===k}"><span class="pdot" style="background:${PLACE_CATS[k].c}"></span>${PLACE_CATS[k].l}</button>`).join("")}</div>` : ""}
+    <div class="pmap" id="pmap" role="region" aria-label="Mapa míst">
+      <div class="pmap-tiles"></div><div class="pmap-pins"></div>
+      <div class="pmap-zoom"><button type="button" data-pzoom="1" aria-label="Přiblížit">+</button><button type="button" data-pzoom="-1" aria-label="Oddálit">−</button></div>
+      <div class="pmap-attr">© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a></div>
+    </div>
+    ${list.length ? `<div class="places">${list.map((p,i) => `
+      <article class="place${placeSel===p.id?" sel":""}" id="place-${p.id}">
+        <div class="place-head"><span class="pnum" style="background:${placeCat_(p).c}">${i+1}</span><div><h4>${esc(p.n)}</h4><span class="label">${placeCat_(p).l}</span></div></div>
+        ${p.addr ? `<div class="place-addr">${esc(p.addr)}${p.approx ? ` <span class="note">(poloha na mapě je přibližná)</span>` : ""}</div>` : ""}
+        ${p.note ? `<p>${esc(p.note)}</p>` : ""}
+        ${(p.trips||[]).length ? `<div class="tags">${p.trips.filter(id => trip(id)).map(id => `<button class="tag" data-goto="${id}">${esc(trip(id).name)}</button>`).join("")}</div>` : ""}
+        <div class="place-actions">
+          <a class="btn" href="${navMapy(p)}" target="_blank" rel="noopener">Navigovat (Mapy.cz) ↗</a>
+          <a class="btn ghost" href="${navGoogle(p)}" target="_blank" rel="noopener">Google Mapy ↗</a>
+          <button class="btn ghost" type="button" data-pshow="${p.id}">Ukázat na mapě</button>
+          ${p.web ? `<a class="btn ghost" href="${esc(p.web)}" target="_blank" rel="noopener">Web ↗</a>` : ""}
+        </div>
+      </article>`).join("")}</div>` : `<div class="empty">Zatím žádná místa. Pošli Claudovi název a odkaz z Mapy.cz nebo Google Map a místo se tu objeví.</div>`}`;
+}
+// Small slippy map: integer zoom levels, drag to pan, wheel / double-click / pinch / buttons to zoom.
+function initPlacesMap(){
+  const el = document.getElementById("pmap"); if (!el) return;
+  const T = 256, tilesEl = el.querySelector(".pmap-tiles"), pinsEl = el.querySelector(".pmap-pins");
+  const wx = (lon,z) => (lon + 180) / 360 * T * 2**z;
+  const wy = (lat,z) => { const s = Math.sin(lat * Math.PI / 180); return (0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)) * T * 2**z; };
+  const list = shownPlaces();
+  let W = el.clientWidth, H = el.clientHeight, v;
+  if (pmapView) v = pmapView;
+  else if (!list.length) v = {z:7, cx:wx(15.5,7), cy:wy(49.8,7)};
+  else {
+    const lo = Math.min(...list.map(p => p.lon)), hi = Math.max(...list.map(p => p.lon)), la = Math.min(...list.map(p => p.lat)), lb = Math.max(...list.map(p => p.lat));
+    let z = 14; while (z > 3 && (wx(hi,z) - wx(lo,z) > W - 80 || wy(la,z) - wy(lb,z) > H - 80)) z--;
+    v = {z, cx:(wx(lo,z) + wx(hi,z)) / 2, cy:(wy(la,z) + wy(lb,z)) / 2};
+  }
+  pmapView = v;
+  const imgs = new Map();
+  function draw(scale = 1, ox = 0, oy = 0){
+    W = el.clientWidth; H = el.clientHeight;
+    const n = 2**v.z, x0 = v.cx - W/2, y0 = v.cy - H/2, keep = new Set();
+    for (let ty = Math.max(0, Math.floor(y0 / T)); ty <= Math.min(n - 1, Math.floor((y0 + H) / T)); ty++)
+      for (let tx = Math.floor(x0 / T); tx <= Math.floor((x0 + W) / T); tx++){
+        const key = `${v.z}/${((tx % n) + n) % n}/${ty}`, id = key + "@" + tx; keep.add(id);
+        let im = imgs.get(id);
+        if (!im){ im = new Image(); im.alt = ""; im.draggable = false; im.src = `https://tile.openstreetmap.org/${key}.png`; imgs.set(id, im); tilesEl.appendChild(im); }
+        im.style.transform = `translate(${tx * T - x0}px,${ty * T - y0}px)`;
+      }
+    for (const [id, im] of imgs) if (!keep.has(id)){ im.remove(); imgs.delete(id); }
+    tilesEl.style.transform = pinsEl.style.transform = scale === 1 && !ox && !oy ? "" : `translate(${ox}px,${oy}px) scale(${scale})`;
+    pinsEl.innerHTML = list.map((p,i) => `<button type="button" class="ppin${placeSel===p.id?" sel":""}" data-ppin="${p.id}" style="left:${wx(p.lon,v.z) - x0}px;top:${wy(p.lat,v.z) - y0}px;--c:${placeCat_(p).c}" aria-label="${esc(p.n)}"><span><i>${i+1}</i></span></button>`).join("");
+  }
+  function zoomAt(dz, px = W/2, py = H/2){
+    const z = Math.max(3, Math.min(18, v.z + dz)); if (z === v.z) return;
+    const k = 2**(z - v.z); v.cx = (v.cx - W/2 + px) * k - px + W/2; v.cy = (v.cy - H/2 + py) * k - py + H/2; v.z = z; draw();
+  }
+  el._show = id => { const p = PLACES.find(q => q.id === id); if (!p) return; v.z = Math.max(v.z, 15); v.cx = wx(p.lon, v.z); v.cy = wy(p.lat, v.z); draw(); };
+  const pts = new Map(); let start = null, moved = false;
+  el.addEventListener("pointerdown", e => {
+    if (e.target.closest("button,a")) return;
+    el.setPointerCapture(e.pointerId); pts.set(e.pointerId, {x:e.clientX, y:e.clientY}); moved = false;
+    start = {cx:v.cx, cy:v.cy, pts:new Map([...pts].map(([k,p]) => [k, {...p}]))};
+  });
+  el.addEventListener("pointermove", e => {
+    if (!pts.has(e.pointerId) || !start) return;
+    pts.set(e.pointerId, {x:e.clientX, y:e.clientY});
+    const cur = [...pts.values()], st = [...start.pts.values()];
+    if (cur.length === 1 && st.length === 1){ const dx = cur[0].x - st[0].x, dy = cur[0].y - st[0].y; if (Math.abs(dx) + Math.abs(dy) > 3) moved = true; v.cx = start.cx - dx; v.cy = start.cy - dy; draw(); }
+    else if (cur.length === 2 && st.length === 2){
+      const d = (a,b) => Math.hypot(a.x - b.x, a.y - b.y), r = el.getBoundingClientRect();
+      const s = d(cur[0],cur[1]) / d(st[0],st[1]), mx = (st[0].x + st[1].x) / 2 - r.left, my = (st[0].y + st[1].y) / 2 - r.top;
+      start.scale = s; start.mx = mx; start.my = my; moved = true;
+      draw(s, mx - mx * s, my - my * s);
+    }
+  });
+  const end = e => {
+    if (!pts.has(e.pointerId)) return; pts.delete(e.pointerId);
+    if (start && start.scale){ const dz = Math.round(Math.log2(start.scale)); draw(); if (dz) zoomAt(dz, start.mx, start.my); }
+    start = pts.size ? {cx:v.cx, cy:v.cy, pts:new Map([...pts].map(([k,p]) => [k, {...p}]))} : null;
+  };
+  el.addEventListener("pointerup", end); el.addEventListener("pointercancel", end);
+  let lastWheel = 0;
+  el.addEventListener("wheel", e => { e.preventDefault(); const now = Date.now(); if (now - lastWheel < 250) return; lastWheel = now; const r = el.getBoundingClientRect(); zoomAt(e.deltaY < 0 ? 1 : -1, e.clientX - r.left, e.clientY - r.top); }, {passive:false});
+  el.addEventListener("dblclick", e => { if (e.target.closest("button,a")) return; const r = el.getBoundingClientRect(); zoomAt(1, e.clientX - r.left, e.clientY - r.top); });
+  el.addEventListener("click", e => {
+    const z = e.target.closest("[data-pzoom]"); if (z){ zoomAt(+z.dataset.pzoom); return; }
+    const pin = e.target.closest("[data-ppin]"); if (!pin || moved) return;
+    placeSel = pin.dataset.ppin; draw();
+    document.querySelectorAll(".place").forEach(c => c.classList.toggle("sel", c.id === "place-" + placeSel));
+    const card = document.getElementById("place-" + placeSel); if (card) card.scrollIntoView({block:"nearest", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"});
+  });
+  if (el._ro) el._ro.disconnect(); el._ro = new ResizeObserver(() => draw()); el._ro.observe(el);
+  draw();
+}
+
+const SECTIONS = {next:viewNext, past:viewPast, members:() => viewMembers("people"), cars:() => viewMembers("cars"), places:viewPlaces};
 function render(){
   document.querySelectorAll(".sections > .sec").forEach(b => b.setAttribute("aria-selected", b.dataset.sec===sec));
   document.getElementById("view").innerHTML = SECTIONS[sec]();
-  initZoomMaps();
+  initZoomMaps(); initPlacesMap();
   const want = "#" + stateHash();
   if (location.hash !== want) try{ history[firstRender ? "replaceState" : "pushState"](null,"",want); }catch(_){}
   firstRender = false;
@@ -1440,6 +1583,12 @@ view.addEventListener("click", e => {
     tr.scrollIntoView({block:"center", behavior: calm ? "auto" : "smooth"});
     tr.classList.remove("flash"); void tr.offsetWidth; tr.classList.add("flash");
     tr.querySelector(".car-cell").focus({preventScroll:true});
+  }
+  else if (b.dataset.pcat){ placeCat = b.dataset.pcat; pmapView = null; render(); }
+  else if (b.dataset.pshow){
+    const m = document.getElementById("pmap"); placeSel = b.dataset.pshow;
+    document.querySelectorAll(".place").forEach(c => c.classList.toggle("sel", c.id === "place-" + placeSel));
+    if (m && m._show){ m._show(placeSel); m.scrollIntoView({block:"nearest", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"}); }
   }
   else if (b.dataset.sort){ const k = b.dataset.sort; fleetDir = k===fleetSort ? -fleetDir : FLEET_SORTS.find(x=>x[0]===k)[2]; fleetSort = k; render(); }
   else if (b.dataset.editRoute){ const f = view.querySelector(`[data-route-form="${b.dataset.editRoute}"]`); f.hidden = !f.hidden; if (!f.hidden) f.querySelector("input").focus(); }
