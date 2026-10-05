@@ -1426,7 +1426,9 @@ const PLACE_CATS = {
 };
 const PLACES = [
   {id:"manolo", n:"Manolo Café", cat:"kavarna", lat:49.3967, lon:15.5803, approx:true, addr:"Vrchlického 1971/25, Jihlava",
-   note:"Sraz před tripem Podzim 2026. Kafe, než vyrazíme.", trips:["podzim26"], web:"https://www.instagram.com/manolo.jihlava/"}
+   note:"Sraz před tripem Podzim 2026. Kafe, než vyrazíme.", trips:["podzim26"], web:"https://www.instagram.com/manolo.jihlava/"},
+  // Tom 2026-10-05: Google Maps place link; coordinates from the link.
+  {id:"bistro-u-maminky", n:"Bistro u maminky", cat:"restaurace", lat:50.0282037, lon:16.602042}
 ];
 let placeCat = "all", placeSel = null, pmapView = null;
 const placeCat_ = p => PLACE_CATS[p.cat] || PLACE_CATS.jine;
@@ -1470,8 +1472,8 @@ function initPlacesMap(){
   else if (!list.length) v = {z:7, cx:wx(15.5,7), cy:wy(49.8,7)};
   else {
     const lo = Math.min(...list.map(p => p.lon)), hi = Math.max(...list.map(p => p.lon)), la = Math.min(...list.map(p => p.lat)), lb = Math.max(...list.map(p => p.lat));
-    let z = 14; while (z > 3 && (wx(hi,z) - wx(lo,z) > W - 80 || wy(la,z) - wy(lb,z) > H - 80)) z--;
-    v = {z, cx:(wx(lo,z) + wx(hi,z)) / 2, cy:(wy(la,z) + wy(lb,z)) / 2};
+    let z = 14; while (z > 3 && (wx(hi,z) - wx(lo,z) > W - 80 || wy(la,z) - wy(lb,z) > H - 120)) z--;
+    v = {z, cx:(wx(lo,z) + wx(hi,z)) / 2, cy:(wy(la,z) + wy(lb,z)) / 2 - 15}; // pins stand above their point, so shift the view up a little
   }
   pmapView = v;
   const imgs = new Map();
