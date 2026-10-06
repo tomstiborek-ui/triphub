@@ -835,6 +835,7 @@ function tripCars(t){
   return ks.length ? `<div class="trip-cars"><span class="label">${t.status==="next"?"Auta, která jedou":"Auta na tripu"}</span>${ks.map(k => carOut(t,k) ? `<button class="trip-car out" data-car="${k}" aria-label="${esc(CARS[k].m)}, nejede">${carThumb(CARS[k])}<span><s>${esc(CARS[k].m)}</s><small>Nejede</small></span></button>` : CARS[k].planned ? `<button class="trip-car plan" data-car="${k}" aria-label="${esc(CARS[k].m)}, ${PLAN_LABEL.toLowerCase()}">${carThumb(CARS[k])}<span>${esc(CARS[k].m)}<small>${PLAN_LABEL}</small></span></button>` : `<button class="trip-car" data-car="${k}">${carThumb(CARS[k])}<span>${esc(CARS[k].m)}</span></button>`).join("")}</div>` : "";
 }
 // People on a trip (past or next): drivers from crew (or the owners of the trip's cars when crew isn't recorded), then co-drivers.
+const tripNames = t => t.people ? [...t.people] : [...new Set([...(t.crew.length ? t.crew.filter(c => c[2]!=="out").map(c => c[0]) : (t.cars||[]).map(ownerOf).filter(Boolean)), ...(t.codrivers||[]).filter(n => !coOut(t,n))])];
 function tripPeople(t){
   if (t.people) return t.people.length ? `<div class="trip-cars trip-people"><span class="label">Posádka · ${t.people.length} ${pl(t.people.length,"člověk","lidé","lidí")}</span>${t.people.map(n => `<span class="trip-person" title="${esc(n)}">${avatar(n)}<span>${esc(nick(n))}</span></span>`).join("")}</div>` : "";
   const drivers = t.crew.length ? t.crew.filter(c => c[2]!=="out").map(c => c[0]) : (t.cars||[]).map(ownerOf).filter(Boolean);
@@ -1295,7 +1296,9 @@ function viewStories(t){
   const list = [...(sharedStories[t.id]||[]), ...t.stories];
   const carOf = n => { const c = t.crew.find(x => x[0]===n); return c && CARS[c[1]] ? CARS[c[1]].m : ""; };
   const off = storiesState === "off", ed = editing && editing.trip === t.id ? editing : null;
-  const drivers = t.crew.filter(c=>c[2]!=="out").map(([n])=>n); if (ed && drivers.length && !drivers.includes(ed.by)) drivers.unshift(ed.by);
+  // Tom 2026-10-06: "Autor" can be anyone on the trip (driver or co-driver); every trip gets the dropdown, all people as fallback.
+  let authors = tripNames(t); if (!authors.length) authors = [...new Set([...MEMBERS.map(m => m.n), ...CODRIVERS.map(c => c.n)])];
+  if (ed && ed.by && !authors.includes(ed.by)) authors.unshift(ed.by);
   return `<div class="stories">
     <div>${storiesState==="loading" && !list.length ? `<div class="empty">Načítám příběhy…</div>` : storiesState==="error" ? `<div class="empty">Příběhy se teď nepodařilo načíst. Zkus stránku obnovit.</div>` : list.length ? "" : `<div class="empty">Zatím žádné příběhy.</div>`}${list.map(s=>`
       <article class="story">
@@ -1304,7 +1307,7 @@ function viewStories(t){
       </article>`).join("")}</div>
     <form class="compose" id="compose">
       <span class="label">${ed ? "Upravit příběh" : "Napiš příběh"}</span>
-      <label for="s-by">Řidič${drivers.length?`<select id="s-by">${drivers.map(n=>`<option${ed&&ed.by===n?" selected":""}>${esc(n)}</option>`).join("")}</select>`:`<input id="s-by" required maxlength="80" placeholder="Tvoje jméno" value="${ed?esc(ed.by):""}">`}</label>
+      <label for="s-by">Autor<select id="s-by">${authors.map(n=>`<option${ed&&ed.by===n?" selected":""}>${esc(n)}</option>`).join("")}</select></label>
       <label for="s-title">Nadpis<input id="s-title" required maxlength="160" placeholder="Den, kdy nám Gavia dala zabrat" value="${ed?esc(ed.t):""}"></label>
       <label for="s-body">Příběh<textarea id="s-body" required maxlength="8000" placeholder="Co se stalo na cestě?">${ed?esc(ed.body):""}</textarea></label>
       <label for="s-photos">Fotky (nejvýš ${MAX_STORY_PHOTOS})<input id="s-photos" type="file" accept="image/*" multiple></label>
