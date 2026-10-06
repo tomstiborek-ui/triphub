@@ -151,6 +151,7 @@ button,input,textarea,select{font:inherit;color:inherit}
 .note{font-size:12px;color:var(--muted)}
 
 /* Crew */
+.member .nick{font-weight:400;color:var(--muted)}
 .crew{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
 .driver{background:var(--surface);border:0;box-shadow:var(--card-shadow);border-radius:10px;padding:16px;display:grid;gap:10px}
 .driver .num{font-family:var(--display);font-weight:700;font-size:31px;line-height:.9;color:var(--accent)}
@@ -514,6 +515,9 @@ const MEMBERS = [
 const CODRIVERS = [
   {n:"Jiří Tyc"}, {n:"Matěj Pospíchal"}, {n:"Richard Stránský"}, {n:"Matěj Tyc"}, {n:"Filip Doležal"}, {n:"Jára Obdržálek", isNew:true}
 ];
+// Nicknames (Tom 2026-10-06), used in the trip hero crew lists. Richard, Matěj Tyc and Filip have none yet.
+const NICK = {"Tom Stiborek":"Tom", "Jan Verner":"Verný", "Otakar Doležal":"Oťas", "Jiří Tyc":"Jirka", "Jindřich Šikl":"Jindra", "Jan Procházka":"Honza", "Martin Vítovec":"Martin", "Jára Obdržálek":"Jára", "Petr Ježek":"Ježura", "Matěj Pospíchal":"Matěj", "Matěj Tyc":"Matěj T."};
+const nick = n => NICK[n] || n.split(" ")[0];
 // Country of origin by brand (brand's home country), drawn as small inline SVG flags.
 const ORIGIN = {Porsche:"DE", BMW:"DE", Mazda:"JP", Subaru:"JP", Toyota:"JP", Saab:"SE", Volvo:"SE", Alfa:"IT", Mini:"GB", "Škoda":"CZ", "Mercedes-Benz":"DE", Yamaha:"JP"};
 const COUNTRY = {DE:"Německo", JP:"Japonsko", SE:"Švédsko", IT:"Itálie", GB:"Velká Británie", CZ:"Česko"};
@@ -831,11 +835,11 @@ function tripCars(t){
 }
 // People on a trip (past or next): drivers from crew (or the owners of the trip's cars when crew isn't recorded), then co-drivers.
 function tripPeople(t){
-  if (t.people) return t.people.length ? `<div class="trip-cars trip-people"><span class="label">Posádka · ${t.people.length} ${pl(t.people.length,"člověk","lidé","lidí")}</span>${t.people.map(n => `<span class="trip-person">${avatar(n)}<span>${esc(n)}</span></span>`).join("")}</div>` : "";
+  if (t.people) return t.people.length ? `<div class="trip-cars trip-people"><span class="label">Posádka · ${t.people.length} ${pl(t.people.length,"člověk","lidé","lidí")}</span>${t.people.map(n => `<span class="trip-person" title="${esc(n)}">${avatar(n)}<span>${esc(nick(n))}</span></span>`).join("")}</div>` : "";
   const drivers = t.crew.length ? t.crew.filter(c => c[2]!=="out").map(c => c[0]) : (t.cars||[]).map(ownerOf).filter(Boolean);
   const people = [...new Set(drivers)].map(n => [n, "Řidič"]);
   (t.codrivers||[]).filter(n => !coOut(t,n) && !people.some(p => p[0]===n)).forEach(n => people.push([n, "Spolujezdec"]));
-  return people.length ? `<div class="trip-cars trip-people"><span class="label">Posádka · ${people.length} ${pl(people.length,"člověk","lidé","lidí")}</span>${people.map(([n,role]) => `<span class="trip-person">${avatar(n)}<span>${esc(n)}<small>${role}</small></span></span>`).join("")}</div>` : "";
+  return people.length ? `<div class="trip-cars trip-people"><span class="label">Posádka · ${people.length} ${pl(people.length,"člověk","lidé","lidí")}</span>${people.map(([n,role]) => `<span class="trip-person" title="${esc(n)}">${avatar(n)}<span>${esc(nick(n))}<small>${role}</small></span></span>`).join("")}</div>` : "";
 }
 /* ---------- Weather (Open-Meteo, loaded live in the viewer's browser) ---------- */
 const WX_TEXT = c => c===0?"Jasno":c===1?"Skoro jasno":c===2?"Polojasno":c===3?"Zataženo":c<=48?"Mlha":c<=57?"Mrholení":c<=67?(c===65?"Silný déšť":c===61?"Slabý déšť":"Déšť"):c<=77?"Sněžení":c<=82?"Přeháňky":c<=86?"Sněhové přeháňky":"Bouřky";
@@ -1364,7 +1368,7 @@ function viewMembers(part){
     <div class="subhead"><h3>Řidiči</h3></div>
     <div class="members">${people.map(p => `
       <article class="member">
-        <div class="top-row">${avatar(p.n)}<div><div class="name">${esc(p.n)}</div>${p.going?`<div class="member-tags"><span class="tag next">Jede: ${esc(next.name)}</span></div>`:p.notGoing?`<div class="member-tags"><span class="tag out">Nejede: ${esc(next.name)}</span></div>`:""}
+        <div class="top-row">${avatar(p.n)}<div><div class="name">${esc(p.n)}${NICK[p.n]&&NICK[p.n]!==p.n.split(" ")[0]?` <span class="nick">„${esc(NICK[p.n])}“</span>`:""}</div>${p.going?`<div class="member-tags"><span class="tag next">Jede: ${esc(next.name)}</span></div>`:p.notGoing?`<div class="member-tags"><span class="tag out">Nejede: ${esc(next.name)}</span></div>`:""}
           <div class="meta">${p.coTs.length?"Řidič i spolujezdec · ":""}${p.cars.length} ${pl(p.cars.length,"auto","auta","aut")} · ${p.trips} ${pl(p.trips,"trip","tripy","tripů")}</div></div></div>
         <div class="garage">${p.cars.map(({k,ts,nx,nxOut}) => `
           <div class="gcar">
@@ -1376,7 +1380,7 @@ function viewMembers(part){
     <div class="subhead"><h3>Spolujezdci</h3></div>
     <div class="members">${coOnly.map(p => ({...p, ts: past.filter(t => ((t.codrivers||[]).includes(p.n) && !coOut(t,p.n)) || (t.people||[]).includes(p.n)), drove: past.filter(t => t.crew.some(c => c[0]===p.n && c[1]) || (t.cars||[]).some(k => CARS[k] && CARS[k].owner===p.n))})).map(p => `
       <article class="member">
-        <div class="top-row">${avatar(p.n)}<div><div class="name">${esc(p.n)}</div>${(p.isNew || (next && ((next.codrivers||[]).includes(p.n) || coOut(next,p.n)))) ? `<div class="member-tags">${next && (next.codrivers||[]).includes(p.n)?`<span class="tag next">Jede: ${esc(next.name)}</span>`:next && coOut(next,p.n)?`<span class="tag out">Nejede: ${esc(next.name)}</span>`:""}${p.isNew?`<span class="tag">Nově letos</span>`:""}</div>`:""}
+        <div class="top-row">${avatar(p.n)}<div><div class="name">${esc(p.n)}${NICK[p.n]&&NICK[p.n]!==p.n.split(" ")[0]?` <span class="nick">„${esc(NICK[p.n])}“</span>`:""}</div>${(p.isNew || (next && ((next.codrivers||[]).includes(p.n) || coOut(next,p.n)))) ? `<div class="member-tags">${next && (next.codrivers||[]).includes(p.n)?`<span class="tag next">Jede: ${esc(next.name)}</span>`:next && coOut(next,p.n)?`<span class="tag out">Nejede: ${esc(next.name)}</span>`:""}${p.isNew?`<span class="tag">Nově letos</span>`:""}</div>`:""}
           <div class="meta">${p.drove.length?"Spolujezdec i řidič":"Spolujezdec"} · ${p.ts.length} ${pl(p.ts.length,"trip","tripy","tripů")}</div></div></div>
         ${Object.keys(CARS).filter(k => CARS[k].owner===p.n).map(k => `<div class="garage"><div class="gcar"><button class="model" data-row="${k}" aria-label="${esc(CARS[k].m)}: ukázat v tabulce aut">${flag(k)}${esc(CARS[k].m)}</button></div></div>`).join("")}<div class="tags">${p.ts.length ? p.ts.map(t => `<button class="tag" data-goto="${t.id}">${esc(t.name)}${p.drove.includes(t)?" · řidič":""}</button>`).join("") : `<span class="note">Zatím bez zapsaného tripu</span>`}</div>
       </article>`).join("")}</div>`;
