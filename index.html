@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset=utf8><meta name="robots" content="noindex, nofollow, noimageindex"><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body><script>/* Site password gate (Tom 2026-10-06) */try{if(localStorage.getItem("site-auth")!=="1")document.documentElement.classList.add("locked")}catch(_){document.documentElement.classList.add("locked")}</script>
+<!doctype html><html><head><meta charset=utf8><meta name="robots" content="noindex, nofollow, noimageindex"><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body><script>/* Site password gate (Tom 2026-10-06) */try{var a=localStorage.getItem("site-auth");if(a!=="1"&&a!=="guest")document.documentElement.classList.add("locked");if(a==="guest")document.documentElement.classList.add("guest")}catch(_){document.documentElement.classList.add("locked")}</script>
 <title>Trip Hub</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -190,6 +190,7 @@ body.over-hero #view > .hero.has-img:first-child .tpick{top:calc(var(--top-h,80p
 /* Password gate */
 html.locked .wrap{display:none}
 html:not(.locked) #gate{display:none}
+html.guest #compose,html.guest .story-del{display:none!important}
 #gate{min-height:100vh;min-height:100dvh;display:grid;place-items:center;padding:24px 0}
 .gate-card{width:min(360px,100%);display:grid;gap:10px;background:var(--surface);box-shadow:var(--card-shadow);border-radius:14px;padding:28px 24px;text-align:left}
 .gate-card h1{font-size:24px;margin:2px 0 0}.gate-card p{margin:0 0 6px}
@@ -1849,18 +1850,22 @@ document.addEventListener("change", e => {
 
 try { matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => render()); new MutationObserver(() => render()).observe(document.documentElement, {attributes:true, attributeFilter:["data-theme"]}); } catch(_) {}
 applyHash();
+const GUEST_HASH = "9aea975aa81c0e9f85e86ed9eff9b64186302176f9c4ff8f867597b79bff30b5";
 // Site password gate (Tom 2026-10-06): the group password is checked by Supabase (rpc check_story_pass), so it isn't in the page.
 // It only hides the site from casual visitors; the repo and its files stay public on GitHub.
-document.getElementById("gate-form").addEventListener("submit", e => {
+const sha256 = async t => crypto.subtle ? [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t)))].map(x => x.toString(16).padStart(2,"0")).join("") : "";
+document.getElementById("gate-form").addEventListener("submit", async e => {
   e.preventDefault();
-  const pass = document.getElementById("gate-pass").value, msg = document.getElementById("gate-msg"), btn = e.target.querySelector("button");
+  const pass = document.getElementById("gate-pass").value, msg = document.getElementById("gate-msg"), btn = e.target.querySelector("button"), html = document.documentElement;
+  const enter = mode => { store.set("site-auth", mode); html.classList.toggle("guest", mode === "guest"); html.classList.remove("locked"); render(); };
+  // Guest password (Tom 2026-10-06): view only, no stories or photos. Only its SHA-256 is in the page.
+  if (await sha256(pass) === GUEST_HASH) return enter("guest");
   btn.disabled = true; msg.textContent = "Ověřuji…";
   fetch(`${STORY_DB.url}/rest/v1/rpc/check_story_pass`, {method:"POST", headers: dbHeaders(), body: JSON.stringify({pass})})
     .then(r => r.ok ? r.json() : Promise.reject())
     .then(ok => {
       if (ok !== true){ msg.textContent = "Špatné heslo."; btn.disabled = false; return; }
-      store.set("site-auth", "1"); store.set("story-pass", pass);
-      document.documentElement.classList.remove("locked"); render();
+      store.set("story-pass", pass); enter("1");
     })
     .catch(() => { msg.textContent = "Heslo se teď nepodařilo ověřit. Zkus to znovu."; btn.disabled = false; });
 });
