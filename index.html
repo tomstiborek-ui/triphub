@@ -1419,7 +1419,7 @@ function viewMembers(part){
   // People who are also drivers (in MEMBERS) get one card in Řidiči that lists their co-driver trips too.
   const coOnly = CODRIVERS.filter(p => !member(p.n));
   const fleet = Object.keys(CARS).filter(k => !CARS[k].variantOf).map(k => ({k, owner:ownerOf(k), trips:past.filter(t => familyOf(k).some(v => onTrip(t,v))).length}));
-  const vrows = k => familyOf(k).slice(1).map(v => { const pf = (CAR_INFO[v]||{}).perf || {}; return {k:v, owner:ownerOf(v), trips:past.filter(t => onTrip(t,v)).length, ...CARS[v], ratio:CARS[v].kg/CARS[v].hp, acc:pf.acc, vmax:pf.vmax, approx:pf.approx}; });
+  const vrows = k => familyOf(k).slice(1).map(v => { const pf = (CAR_INFO[v]||{}).perf || {}; return {k:v, owner:ownerOf(v), trips:past.filter(t => familyOf(v).some(x => onTrip(t,x))).length, ...CARS[v], ratio:CARS[v].kg/CARS[v].hp, acc:pf.acc, vmax:pf.vmax, approx:pf.approx}; });
   const rows = fleet.map(f => { const pf = (CAR_INFO[f.k]||{}).perf || {}; return {...f, ...CARS[f.k], ratio:CARS[f.k].kg/CARS[f.k].hp, acc:pf.acc, vmax:pf.vmax, approx:pf.approx}; })
     .sort((a,b) => (a[fleetSort]==null) - (b[fleetSort]==null) || ((a[fleetSort]||0) - (b[fleetSort]||0)) * fleetDir || b.hp - a.hp);
   if (part === "cars") return `
