@@ -178,11 +178,10 @@ body.over-hero .top-nav .sec[aria-selected="true"]{background:#F2F5F8;color:#1E2
 @media (hover:hover){body.over-hero .top-nav .sec:not([aria-selected="true"]):hover{background:rgba(20,27,33,.7);color:#fff;border-color:rgba(255,255,255,.5)}}
 body.over-hero #view > .hero.has-img:first-child{margin-top:calc(-1 * var(--top-h,80px));padding-top:calc(var(--hero-top) + var(--top-h,80px));background-image:linear-gradient(180deg,rgba(20,27,33,.55) 0,rgba(20,27,33,0) calc(var(--top-h,80px) + 70px)),linear-gradient(0deg,rgba(20,27,33,.82) 0%,rgba(20,27,33,.66) calc(100% - var(--hero-top) - var(--top-h,80px) - 170px),rgba(20,27,33,.22) calc(100% - var(--hero-top) - var(--top-h,80px) + 10px),rgba(20,27,33,0) 100%),var(--hero-img)}
 body.over-hero #view > .hero.has-img:first-child .tpick{top:calc(var(--top-h,80px) + 16px)}
-.fleet tr.vrow td{background:color-mix(in srgb,var(--soft) 55%,transparent)}
-.fleet tr.vrow td:first-child{padding-left:34px}
 .vtag{display:inline-block;margin-right:6px;padding:2px 6px;border-radius:3px;background:var(--soft);font:500 10px/1.2 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);vertical-align:1px}
 .gvars{display:block;font-size:12px;margin-top:2px}
-.cc-vars{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 10px}
+.cc-vars{margin:4px 0 12px}
+.vcount{display:block;font-size:12px;color:var(--muted);font-weight:400}
 .crew{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
 .driver{background:var(--surface);border:0;box-shadow:var(--card-shadow);border-radius:10px;padding:16px;display:grid;gap:10px}
 .driver .num{font-family:var(--display);font-weight:700;font-size:31px;line-height:.9;color:var(--accent)}
@@ -1419,7 +1418,6 @@ function viewMembers(part){
   // People who are also drivers (in MEMBERS) get one card in Řidiči that lists their co-driver trips too.
   const coOnly = CODRIVERS.filter(p => !member(p.n));
   const fleet = Object.keys(CARS).filter(k => !CARS[k].variantOf).map(k => ({k, owner:ownerOf(k), trips:past.filter(t => familyOf(k).some(v => onTrip(t,v))).length}));
-  const vrows = k => familyOf(k).slice(1).map(v => { const pf = (CAR_INFO[v]||{}).perf || {}; return {k:v, owner:ownerOf(v), trips:past.filter(t => familyOf(v).some(x => onTrip(t,x))).length, ...CARS[v], ratio:CARS[v].kg/CARS[v].hp, acc:pf.acc, vmax:pf.vmax, approx:pf.approx}; });
   const rows = fleet.map(f => { const pf = (CAR_INFO[f.k]||{}).perf || {}; return {...f, ...CARS[f.k], ratio:CARS[f.k].kg/CARS[f.k].hp, acc:pf.acc, vmax:pf.vmax, approx:pf.approx}; })
     .sort((a,b) => (a[fleetSort]==null) - (b[fleetSort]==null) || ((a[fleetSort]||0) - (b[fleetSort]||0)) * fleetDir || b.hp - a.hp);
   if (part === "cars") return `
@@ -1460,7 +1458,7 @@ function viewMembers(part){
       </div></div>
     <div class="fleet-wrap"><table class="fleet">
       <thead><tr><th>Auto</th><th>Řidič</th><th>Válce</th><th class="n">Objem</th><th class="n">Výkon</th><th class="n">Hmotnost</th><th>Převodovka</th><th class="n">kg/k</th><th class="n">0–100</th><th class="n">Max.</th><th class="n">Tripy</th></tr></thead>
-      <tbody>${rows.flatMap(r => [r, ...vrows(r.k)]).map(r => `<tr id="row-${r.k}"${r.variantOf?` class="vrow"`:""}><td><button class="car-cell" data-car="${r.k}"><span class="car-pic">${carThumb(r)}${flag(r.k)}</span><span class="car-name">${r.variantOf ? `<span class="vtag">Varianta</span>` : ""}${esc(r.m)}${r.planned?` <span class="tag plan">${PLAN_LABEL}</span>`:""}</span></button></td><td>${r.owner ? esc(r.owner) : `<span class="note">Zatím nepřiřazeno</span>`}</td><td>${engineCell(r.k)}</td><td class="n">${r.l?litres(r.l):"–"}</td><td class="n">${r.hpApprox?"cca ":""}${r.hp} k</td><td class="n">${fmt(r.kg)} kg</td><td>${esc(r.gear||"–")}</td><td class="n">${fmt(+r.ratio.toFixed(1))}</td><td class="n">${r.acc?`${r.approx?"cca ":""}${r.acc.toLocaleString("cs",{minimumFractionDigits:1})} s`:"–"}</td><td class="n">${r.vmax?`${r.approx?"cca ":""}${fmt(r.vmax)} km/h`:"–"}</td><td class="n">${r.trips}</td></tr>`).join("")}</tbody>
+      <tbody>${rows.map(r => `<tr id="row-${r.k}"${r.variantOf?` class="vrow"`:""}><td><button class="car-cell" data-car="${r.k}"><span class="car-pic">${carThumb(r)}${flag(r.k)}</span><span class="car-name">${esc(r.m)}${familyOf(r.k).length > 1 ? `<small class="vcount">${familyOf(r.k).length} varianty</small>` : ""}${r.planned?` <span class="tag plan">${PLAN_LABEL}</span>`:""}</span></button></td><td>${r.owner ? esc(r.owner) : `<span class="note">Zatím nepřiřazeno</span>`}</td><td>${engineCell(r.k)}</td><td class="n">${r.l?litres(r.l):"–"}</td><td class="n">${r.hpApprox?"cca ":""}${r.hp} k</td><td class="n">${fmt(r.kg)} kg</td><td>${esc(r.gear||"–")}</td><td class="n">${fmt(+r.ratio.toFixed(1))}</td><td class="n">${r.acc?`${r.approx?"cca ":""}${r.acc.toLocaleString("cs",{minimumFractionDigits:1})} s`:"–"}</td><td class="n">${r.vmax?`${r.approx?"cca ":""}${fmt(r.vmax)} km/h`:"–"}</td><td class="n">${r.trips}</td></tr>`).join("")}</tbody>
     </table></div>`; }
 }
 
@@ -1501,7 +1499,7 @@ function carCard(k){
   dlg.querySelector(".cc-body").innerHTML = `
     ${carThumb(c,"cc-photo")}
     <div class="cc-text">
-      <span class="label">${c.bike?"Motorka":"Auto"}</span>${fam.length > 1 ? `<div class="cc-vars" role="group" aria-label="Varianty auta">${fam.map(v => `<button type="button" class="sec" data-cc-var="${v}" aria-selected="${v===k}">${esc(CARS[v].vlabel || CARS[v].m)}</button>`).join("")}</div>` : ""}<h2>${esc(c.full||c.m).replace(/-/g,"\u2011")}</h2>
+      <span class="label">${c.bike?"Motorka":"Auto"}</span>${fam.length > 1 ? `<nav class="tabs cc-vars" role="tablist" aria-label="Varianty auta">${fam.map(v => `<button type="button" class="tab" role="tab" data-cc-var="${v}" aria-selected="${v===k}">${esc(CARS[v].vlabel || CARS[v].m)}</button>`).join("")}</nav>` : ""}<h2>${esc(c.full||c.m).replace(/-/g,"\u2011")}</h2>
       <dl class="cc-specs">${specs.filter(x => x[1]).map(([l,v]) => `<div><dt>${l}</dt><dd>${l==="Válce"?engineIcon(engineCfg(k)):""}${esc(String(v))}</dd></div>`).join("")}</dl>
       ${[pf.acc && /0–100/.test(e.note||"") ? "" : e.note, pf.note].filter(Boolean).map(t => `<p class="note">${esc(t)}</p>`).join("")}
       <h3>Tripy s tímto autem</h3>
