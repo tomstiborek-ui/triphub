@@ -61,7 +61,8 @@ button,input,textarea,select{font:inherit;color:inherit}
 /* Hero band */
 /* Full-width trip header; its content stays in the page container. Past trips show a trip photo with the cars behind it. */
 .hero{margin-inline:calc(50% - 50vw);margin-bottom:28px;padding:44px 16px;color:#F2F5F8;background:var(--road);background-size:cover;background-position:var(--hero-pos,center)}
-.hero.has-img{background-image:linear-gradient(90deg,rgba(20,27,33,.82) 0%,rgba(20,27,33,.6) 55%,rgba(20,27,33,.45) 100%),var(--hero-img);padding-block:76px}
+.hero.has-img{background-image:linear-gradient(0deg,rgba(20,27,33,.9) 0%,rgba(20,27,33,.82) calc(100% - var(--hero-top) - 40px),rgba(20,27,33,.3) calc(100% - var(--hero-top) + 60px),rgba(20,27,33,.05) 100%),var(--hero-img);--hero-top:clamp(200px,34vh,340px);padding-block:var(--hero-top) 40px}
+.hero.has-img .hero-in{width:100%;align-items:end}
 .hero-in{max-width:1040px;margin:0 auto;display:grid;grid-template-columns:1.4fr 1fr;gap:24px;align-items:center}
 .hero.has-img h2,.hero.has-img p,.hero.has-img .stat{text-shadow:0 1px 3px rgba(0,0,0,.45)}
 .hero h2{font-size:clamp(28px,4.8vw,45px)}
@@ -188,7 +189,7 @@ button,input,textarea,select{font:inherit;color:inherit}
 
 @media (max-width:820px){
   .hero-in{grid-template-columns:1fr}
-  .hero.has-img{padding-block:44px}
+  .hero.has-img{--hero-top:clamp(170px,30vh,260px);padding-bottom:28px}
   .stage{grid-template-columns:56px 1fr}
   .stage .profile{grid-column:1 / -1}
   .stories{grid-template-columns:1fr}
