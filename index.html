@@ -327,11 +327,12 @@ body.over-hero #view > .hero.has-img:first-child .tpick{top:calc(var(--top-h,80p
 .trip-cars{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:10px;padding-top:18px;border-top:1px solid rgba(255,255,255,.18)}
 .trip-cars .label{flex:0 0 100%;margin:0 0 2px;color:#B8C5D1}
 .trip-car{display:inline-flex;align-items:center;gap:10px;padding:4px 14px 4px 4px;border:1px solid rgba(255,255,255,.28);border-radius:999px;background:rgba(20,27,33,.55);color:#F2F5F8;font:inherit;font-size:14px;font-weight:500;line-height:1.2;cursor:pointer;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
-.trip-car img,.trip-car .car-ph{width:48px;height:36px;object-fit:cover;border-radius:999px}
+.trip-car img,.trip-car .car-ph{width:48px;height:36px;object-fit:cover;border-radius:999px;flex:none}
+.trip-car .car-ph{align-items:center;justify-content:center}
 .trip-car:hover{border-color:#F2F5F8;background:rgba(20,27,33,.75)}
 .trip-car.out{border-style:dashed;background:rgba(20,27,33,.4)}
 .trip-car.out img,.trip-car.out .car-ph{filter:grayscale(1);opacity:.55}
-.trip-car.out span{display:flex;flex-direction:column;gap:2px}
+.trip-car.out > span:not(.car-ph){display:flex;flex-direction:column;gap:2px}
 .trip-car.out s{opacity:.7;text-decoration-thickness:1px}
 .trip-people{margin-top:0;padding-top:14px;border-top:0}
 .trip-person{display:inline-flex;align-items:center;gap:8px;padding:4px 14px 4px 4px;border:1px solid rgba(255,255,255,.28);border-radius:999px;background:rgba(20,27,33,.55);color:#F2F5F8;font-size:14px;font-weight:500;line-height:1.2}
@@ -339,7 +340,7 @@ body.over-hero #view > .hero.has-img:first-child .tpick{top:calc(var(--top-h,80p
 .trip-person > span:last-child{display:flex;flex-direction:column;gap:2px}
 .trip-person small{font:500 10.5px/1 var(--mono);text-transform:uppercase;letter-spacing:.08em;color:#B8C5D1}
 .trip-car.plan{border-style:dashed}
-.trip-car.plan > span{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left}
+.trip-car.plan > span:not(.car-ph){display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left}
 .trip-car.plan small{font:500 10.5px/1 var(--mono);text-transform:uppercase;letter-spacing:.08em;color:#F2D79B}
 .tag.plan{border:1px dashed currentColor;background:transparent;color:var(--muted);cursor:default;white-space:nowrap}
 .trip-car.out small{font:500 10.5px/1 var(--mono);text-transform:uppercase;letter-spacing:.08em;color:#F2B8A8}
