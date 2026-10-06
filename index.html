@@ -168,6 +168,16 @@ button,input,textarea,select{font:inherit;color:inherit}
 @media (hover:hover){.tpick-opt:hover{background:var(--soft)}}
 .tpick-opt:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 @media (max-width:640px){.tpick{top:12px}}
+/* Hero under the top menu */
+body.over-hero .top{position:relative;z-index:6;color:#F2F5F8}
+body.over-hero .brand svg rect{fill:rgba(255,255,255,.18)!important}
+body.over-hero .brand svg path{stroke:#fff!important}
+body.over-hero .brand h1{text-shadow:0 1px 3px rgba(0,0,0,.45)}
+body.over-hero .top-nav .sec{background:rgba(20,27,33,.45);border-color:rgba(255,255,255,.28);color:#E6ECF1;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+body.over-hero .top-nav .sec[aria-selected="true"]{background:#F2F5F8;color:#1E262C;border-color:#F2F5F8}
+@media (hover:hover){body.over-hero .top-nav .sec:not([aria-selected="true"]):hover{background:rgba(20,27,33,.7);color:#fff;border-color:rgba(255,255,255,.5)}}
+body.over-hero #view > .hero.has-img:first-child{margin-top:calc(-1 * var(--top-h,80px));padding-top:calc(var(--hero-top) + var(--top-h,80px));background-image:linear-gradient(180deg,rgba(20,27,33,.55) 0,rgba(20,27,33,0) calc(var(--top-h,80px) + 70px)),linear-gradient(0deg,rgba(20,27,33,.82) 0%,rgba(20,27,33,.66) calc(100% - var(--hero-top) - var(--top-h,80px) - 170px),rgba(20,27,33,.22) calc(100% - var(--hero-top) - var(--top-h,80px) + 10px),rgba(20,27,33,0) 100%),var(--hero-img)}
+body.over-hero #view > .hero.has-img:first-child .tpick{top:calc(var(--top-h,80px) + 16px)}
 .crew{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
 .driver{background:var(--surface);border:0;box-shadow:var(--card-shadow);border-radius:10px;padding:16px;display:grid;gap:10px}
 .driver .num{font-family:var(--display);font-weight:700;font-size:31px;line-height:.9;color:var(--accent)}
@@ -1663,10 +1673,17 @@ function initPlacesMap(){
 }
 
 const SECTIONS = {next:viewNext, past:viewPast, members:() => viewMembers("people"), cars:() => viewMembers("cars"), places:viewPlaces};
+// Tom 2026-10-06: the hero photo runs up behind the top menu; --top-h is the header's height.
+function heroUnderTop(){
+  const v = document.getElementById("view"), f = v.firstElementChild, on = !!(f && f.matches(".hero.has-img"));
+  document.body.classList.toggle("over-hero", on);
+  document.documentElement.style.setProperty("--top-h", document.querySelector(".top").offsetHeight + "px");
+}
+addEventListener("resize", () => { if (document.body.classList.contains("over-hero")) heroUnderTop(); });
 function render(){
   document.querySelectorAll(".sections > .sec").forEach(b => b.setAttribute("aria-selected", b.dataset.sec===sec));
   document.getElementById("view").innerHTML = SECTIONS[sec]();
-  initZoomMaps(); initPlacesMap();
+  initZoomMaps(); initPlacesMap(); heroUnderTop();
   const want = "#" + stateHash();
   if (location.hash !== want) try{ history[firstRender ? "replaceState" : "pushState"](null,"",want); }catch(_){}
   firstRender = false;
