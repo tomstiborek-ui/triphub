@@ -419,7 +419,7 @@ button.tag::after{content:"";position:absolute;inset:-12px -3px}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .pmap-tiles img{filter:brightness(.8) contrast(1.1)}}
 .ppin{position:absolute;width:30px;height:30px;margin:-30px 0 0 -15px;border:0;padding:0;background:none;cursor:pointer}
 .ppin span{display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:var(--c);border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35)}
-.ppin i{transform:rotate(45deg);font:normal 700 13px/1 var(--body);color:#fff}
+.ppin i{transform:rotate(45deg);font:normal 700 13px/1 var(--body);color:var(--t,#fff)}
 .ppin.sel span{outline:3px solid var(--ink);outline-offset:1px}
 .pmap-zoom{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:4px}
 .pmap-zoom button{width:34px;height:34px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:20px;line-height:1;cursor:pointer}
@@ -429,8 +429,11 @@ button.tag::after{content:"";position:absolute;inset:-12px -3px}
 .places{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px;margin-top:12px;align-items:start}
 .place{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px;display:grid;grid-template-columns:72px 1fr;gap:12px;align-items:start}
 .place.sel{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
-.place-pic{position:relative;width:72px;height:72px;border-radius:8px;overflow:hidden;background:color-mix(in srgb,var(--c) 14%,var(--surface));display:flex;align-items:center;justify-content:center;color:var(--c)}
+.place-pic{position:relative;width:72px;height:72px;border-radius:8px;overflow:hidden;background:color-mix(in srgb,var(--c) 14%,var(--surface));display:flex;align-items:center;justify-content:center;color:var(--i,var(--c))}
 .place-pic img{width:100%;height:100%;object-fit:cover}
+/* Dark mode: lighter icon and stronger tile tint so brown/blue icons stay readable. */
+:root[data-theme="dark"] .place-pic{color:color-mix(in srgb,var(--c) 55%,#fff);background:color-mix(in srgb,var(--c) 28%,var(--surface))}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .place-pic{color:color-mix(in srgb,var(--c) 55%,#fff);background:color-mix(in srgb,var(--c) 28%,var(--surface))}}
 .place-pic svg{width:30px;height:30px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .place-pic .pnum{position:absolute;left:3px;top:3px;width:20px;height:20px;font-size:11px;border:1.5px solid #fff}
 .place-body{min-width:0;display:flex;flex-direction:column;gap:3px}
@@ -1429,8 +1432,10 @@ function carCard(k){
 // Places the group likes: shown on a live OpenStreetMap map (tiles load in the visitor's browser) and as a list with navigation links.
 // approx:true = pin position is approximate, so navigation goes by address instead of coordinates.
 const PLACE_CATS = {
-  kavarna:{l:"Kavárna", c:"#8A5A2B"}, restaurace:{l:"Restaurace", c:"#A9561F"}, hospoda:{l:"Hospoda", c:"#B08A1E"},
-  vyhlidka:{l:"Vyhlídka", c:"#3E7B55"}, silnice:{l:"Silnice", c:"#2F5D8A"}, nocleh:{l:"Nocleh", c:"#6B4E8A"}, jine:{l:"Jiné", c:"#5F6D78"}
+  // Tom 2026-10-06: clearly different colours: coffee brown kavárny, blue restaurace, yellow vyhlídky.
+  // c = fill (pins, number badges, chip dots), t = text on that fill, i = icon on the card's pale tile (defaults: white text, icon in c).
+  kavarna:{l:"Kavárna", c:"#6F4E37"}, restaurace:{l:"Restaurace", c:"#1E6FD9"}, hospoda:{l:"Hospoda", c:"#C2410C"},
+  vyhlidka:{l:"Vyhlídka", c:"#F2C200", t:"#3A2E00", i:"#A57C00"}, silnice:{l:"Silnice", c:"#0F766E"}, nocleh:{l:"Nocleh", c:"#7C3AED"}, jine:{l:"Jiné", c:"#5F6D78"}
 };
 const PLACES = [
   {id:"manolo", n:"Manolo Café", cat:"kavarna", lat:49.3967, lon:15.5803, approx:true, addr:"Vrchlického 1971/25, Jihlava",
@@ -1471,7 +1476,7 @@ function viewPlaces(){
     </div>
     ${list.length ? `<div class="places">${list.map((p,i) => `
       <article class="place${placeSel===p.id?" sel":""}" id="place-${p.id}">
-        <div class="place-pic" style="--c:${placeCat_(p).c}">${p.img ? `<img src="${esc(p.img)}" alt="" loading="lazy">` : `<svg viewBox="0 0 24 24" aria-hidden="true">${PLACE_ICON[p.cat] || PLACE_ICON.jine}</svg>`}<span class="pnum" style="background:${placeCat_(p).c}">${i+1}</span></div>
+        <div class="place-pic" style="--c:${placeCat_(p).c};--i:${placeCat_(p).i||placeCat_(p).c}">${p.img ? `<img src="${esc(p.img)}" alt="" loading="lazy">` : `<svg viewBox="0 0 24 24" aria-hidden="true">${PLACE_ICON[p.cat] || PLACE_ICON.jine}</svg>`}<span class="pnum" style="background:${placeCat_(p).c};color:${placeCat_(p).t||"#fff"}">${i+1}</span></div>
         <div class="place-body">
           <h4>${esc(p.n)}</h4>
           <div class="place-meta"><span class="label">${placeCat_(p).l}</span>${p.addr ? ` · ${esc(p.addr)}${p.approx ? " (přibližně)" : ""}` : ""}</div>
@@ -1514,7 +1519,7 @@ function initPlacesMap(){
       }
     for (const [id, im] of imgs) if (!keep.has(id)){ im.remove(); imgs.delete(id); }
     tilesEl.style.transform = pinsEl.style.transform = scale === 1 && !ox && !oy ? "" : `translate(${ox}px,${oy}px) scale(${scale})`;
-    pinsEl.innerHTML = list.map((p,i) => `<button type="button" class="ppin${placeSel===p.id?" sel":""}" data-ppin="${p.id}" style="left:${wx(p.lon,v.z) - x0}px;top:${wy(p.lat,v.z) - y0}px;--c:${placeCat_(p).c}" aria-label="${esc(p.n)}"><span><i>${i+1}</i></span></button>`).join("");
+    pinsEl.innerHTML = list.map((p,i) => `<button type="button" class="ppin${placeSel===p.id?" sel":""}" data-ppin="${p.id}" style="left:${wx(p.lon,v.z) - x0}px;top:${wy(p.lat,v.z) - y0}px;--c:${placeCat_(p).c};--t:${placeCat_(p).t||"#fff"}" aria-label="${esc(p.n)}"><span><i>${i+1}</i></span></button>`).join("");
   }
   function zoomAt(dz, px = W/2, py = H/2){
     const z = Math.max(3, Math.min(18, v.z + dz)); if (z === v.z) return;
