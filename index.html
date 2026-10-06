@@ -409,6 +409,20 @@ button.tag::after{content:"";position:absolute;inset:-12px -3px}
 .lb-stage img{touch-action:pinch-zoom}
 .rsvp-row > span:nth-child(2){white-space:nowrap}
 .rsvp-row .car{min-width:0}
+/* Subtle hover on buttons (pointer devices only) */
+.sec,.btn,.ibtn,.tag,.tab,.trip-chip,.pmap-zoom button,.zctl button,.story-del,.linkish,.gcar .model,.driver .model{transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,filter .15s}
+@media (hover:hover){
+  .sec:not([aria-selected="true"]):hover{background:var(--soft);color:var(--ink);border-color:var(--muted)}
+  .sec[aria-selected="true"]:hover{filter:brightness(1.15)}
+  .btn:not(:disabled):hover,.ibtn.primary:hover{filter:brightness(1.12)}
+  .btn.ghost:not(:disabled):hover{filter:none;background:var(--soft);border-color:var(--muted)}
+  .ibtn:not(.primary):hover,.pmap-zoom button:hover{background:var(--soft);border-color:var(--muted)}
+  button.tag:hover{background:var(--line)}
+  .tab:not([aria-selected="true"]):hover{color:var(--ink);background:var(--soft);border-radius:6px 6px 0 0}
+  .trip-chip:not([aria-pressed="true"]):hover{box-shadow:inset 0 0 0 1px var(--line),var(--card-shadow)}
+  .zctl button:hover{background:#EEF1F4}
+  .linkish:hover,.gcar .model:hover,.driver .model:hover{color:var(--ink);text-decoration-color:currentColor}
+}
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
 }
@@ -451,7 +465,6 @@ button.tag::after{content:"";position:absolute;inset:-12px -3px}
 .ibtn{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;padding:0}
 .ibtn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .ibtn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
-.ibtn:hover{border-color:var(--accent)}
 </style>
 
 <div class="wrap">
