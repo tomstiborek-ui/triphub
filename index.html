@@ -1337,13 +1337,13 @@ function viewStories(t){
 
 const hasRoads = t => t.stages.length > 0 || (Array.isArray(t.days) && t.days.length > 0);
 const PAST_TABS = {roads:["Trasy",viewRoads], photos:["Fotky",viewPhotos], stories:["Příběhy",viewStories]};
-// Trip picker in the hero's top-right corner (Tom 2026-10-06): newest year first, trips within a year in date order.
+// Trip picker in the hero's top-right corner (Tom 2026-10-06): newest first, also within each year (Tom).
 const tripYear = t => +((t.when.match(/(19|20)\d\d/g) || [""]).pop()) || 0;
 function tripPicker(past, t){
   const years = [...new Set(past.map(tripYear))].sort((a,b) => b - a);
   return `<div class="tpick">
     <button type="button" class="tpick-btn" data-tpick aria-haspopup="true" aria-expanded="false" aria-controls="tpick-list"><span class="label">Trip</span><span class="tpick-cur">${esc(t.name)}</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
-    <div class="tpick-list" id="tpick-list" hidden>${years.map(y => `<div class="tpick-year" role="group" aria-label="${y}"><span class="label">${y}</span>${past.filter(p => tripYear(p)===y).reverse().map(p =>
+    <div class="tpick-list" id="tpick-list" hidden>${years.map(y => `<div class="tpick-year" role="group" aria-label="${y}"><span class="label">${y}</span>${past.filter(p => tripYear(p)===y).map(p =>
       `<button type="button" class="tpick-opt" data-trip="${p.id}"${p.id===t.id?` aria-current="true"`:""}><strong>${esc(p.name)}</strong><span>${esc(p.when)}</span></button>`).join("")}</div>`).join("")}</div>
   </div>`;
 }
