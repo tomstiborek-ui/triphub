@@ -443,6 +443,8 @@ button.tag::after{content:"";position:absolute;inset:-12px -3px}
 .place p{margin:0;font-size:13px;color:var(--muted)}
 .place-meta{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .place-meta .label{font-size:10.5px}
+.place-addr{font-size:12.5px;color:var(--muted);line-height:1.35}
+.place-addr:empty{display:none}
 .pnum{flex:none;display:flex;align-items:center;justify-content:center;border-radius:50%;color:#fff;font-weight:700}
 .place .tags{display:flex;flex-wrap:wrap;gap:4px}
 .place-actions{display:flex;gap:6px;margin-top:4px}
@@ -1481,7 +1483,8 @@ function viewPlaces(){
         <div class="place-pic" style="--c:${placeCat_(p).c};--i:${placeCat_(p).i||placeCat_(p).c}">${p.img ? `<img src="${esc(p.img)}" alt="" loading="lazy">` : `<svg viewBox="0 0 24 24" aria-hidden="true">${PLACE_ICON[p.cat] || PLACE_ICON.jine}</svg>`}</div>
         <div class="place-body">
           <h4>${esc(p.n)}</h4>
-          <div class="place-meta"><span class="label">${placeCat_(p).l}</span>${p.addr ? ` · ${esc(p.addr)}${p.approx ? " (přibližně)" : ""}` : ""}</div>
+          <div class="place-meta"><span class="label">${placeCat_(p).l}</span></div>
+          <div class="place-addr" data-paddr="${p.id}">${placeAddr(p) ? esc(placeAddr(p)) : ""}</div>
           ${(p.trips||[]).filter(id => trip(id)).length ? `<div class="tags">${p.trips.filter(id => trip(id)).map(id => `<button class="tag" data-goto="${id}">${esc(trip(id).name)}</button>`).join("")}</div>` : ""}
         <div class="place-actions">
           <a class="ibtn primary" href="${navMapy(p)}" target="_blank" rel="noopener" title="Navigovat (Mapy.cz)" aria-label="Navigovat v Mapy.cz"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l18-8-8 18-2-8z"/></svg></a>
@@ -1493,8 +1496,37 @@ function viewPlaces(){
       </article>`).join("")}</div>` : `<div class="empty">Zatím žádná místa. Pošli Claudovi název a odkaz z Mapy.cz nebo Google Map a místo se tu objeví.</div>`}`;
 }
 // Small slippy map: integer zoom levels, drag to pan, double-click / pinch / buttons to zoom.
+// Addresses: a stored p.addr wins; otherwise the visitor's browser asks OpenStreetMap Nominatim once per place
+// (reverse geocode, one request per second) and keeps the answer in localStorage. Google and Nominatim are blocked
+// from the cloud session that edits this page, so addresses can't be baked in (Tom asked for them 2026-10-06).
+const addrKey = p => `triphub.addr.${p.id}.${p.lat},${p.lon}`;
+function placeAddr(p){ if (p.addr) return p.addr; try{ return localStorage.getItem(addrKey(p)) || ""; }catch(_){ return ""; } }
+let addrQueue = null;
+function fillPlaceAddrs(){
+  if (addrQueue) return;
+  const todo = PLACES.filter(p => !placeAddr(p));
+  if (!todo.length) return;
+  addrQueue = (async () => {
+    for (const p of todo){
+      try{
+        const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=18&addressdetails=1&accept-language=cs&lat=${p.lat}&lon=${p.lon}`);
+        const a = (await r.json()).address || {};
+        const street = [a.road || a.pedestrian || a.hamlet || a.suburb, a.house_number].filter(Boolean).join(" ");
+        const town = a.city || a.town || a.village || a.municipality || "";
+        const addr = [street, town].filter(Boolean).join(", ") + (a.country_code && a.country_code !== "cz" && a.country ? `, ${a.country}` : "");
+        if (addr){
+          try{ localStorage.setItem(addrKey(p), addr); }catch(_){}
+          const el = document.querySelector(`[data-paddr="${p.id}"]`); if (el) el.textContent = addr;
+        }
+      }catch(_){}
+      await new Promise(res => setTimeout(res, 1100));
+    }
+    addrQueue = null;
+  })();
+}
 function initPlacesMap(){
   const el = document.getElementById("pmap"); if (!el) return;
+  fillPlaceAddrs();
   const T = 256, tilesEl = el.querySelector(".pmap-tiles"), pinsEl = el.querySelector(".pmap-pins");
   const wx = (lon,z) => (lon + 180) / 360 * T * 2**z;
   const wy = (lat,z) => { const s = Math.sin(lat * Math.PI / 180); return (0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)) * T * 2**z; };
