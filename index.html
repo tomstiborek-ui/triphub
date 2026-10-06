@@ -61,12 +61,13 @@ button,input,textarea,select{font:inherit;color:inherit}
 /* Hero band */
 /* Full-width trip header; its content stays in the page container. Past trips show a trip photo with the cars behind it. */
 .hero{margin-inline:calc(50% - 50vw);margin-bottom:28px;padding:44px 16px;color:#F2F5F8;background:var(--road);background-size:cover;background-position:var(--hero-pos,center)}
-.hero.has-img{background-image:linear-gradient(0deg,rgba(20,27,33,.9) 0%,rgba(20,27,33,.82) calc(100% - var(--hero-top) - 40px),rgba(20,27,33,.3) calc(100% - var(--hero-top) + 60px),rgba(20,27,33,.05) 100%),var(--hero-img);--hero-top:clamp(200px,34vh,340px);padding-block:var(--hero-top) 40px}
+.hero.has-img{background-image:linear-gradient(0deg,rgba(20,27,33,.82) 0%,rgba(20,27,33,.66) calc(100% - var(--hero-top) - 170px),rgba(20,27,33,.22) calc(100% - var(--hero-top) + 10px),rgba(20,27,33,0) 100%),var(--hero-img);--hero-top:clamp(200px,34vh,340px);padding-block:var(--hero-top) 40px}
 .hero.has-img .hero-in{width:100%;align-items:end}
 .hero-in{max-width:1040px;margin:0 auto;display:grid;grid-template-columns:1.4fr 1fr;gap:24px;align-items:center}
-.hero.has-img h2,.hero.has-img p,.hero.has-img .stat{text-shadow:0 1px 3px rgba(0,0,0,.45)}
+.hero.has-img h2,.hero.has-img p,.hero.has-img .stat,.hero.has-img .label{text-shadow:0 1px 3px rgba(0,0,0,.55),0 0 14px rgba(0,0,0,.35)}
 .hero h2{font-size:clamp(28px,4.8vw,45px)}
 .hero .label{color:#B8C5D1}
+.hero.has-img .label{color:#E2E8EE}
 .hero p{margin:10px 0 0;max-width:52ch;color:#C9D3DD}
 .stats{display:grid;grid-template-columns:repeat(2,1fr);gap:14px 20px;align-content:center}
 .stat .v{font:500 23px/1.1 var(--mono);font-variant-numeric:tabular-nums}
