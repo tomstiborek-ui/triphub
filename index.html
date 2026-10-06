@@ -187,6 +187,14 @@ body.over-hero #view > .hero.has-img:first-child .tpick{top:calc(var(--top-h,80p
 .fleet-sort{padding:0;align-items:center;gap:5px}
 .fleet-sort .label{margin:0 4px 0 0;line-height:1}
 .fleet-sort .sec{min-height:30px;padding:6px 11px;font-size:10.5px;letter-spacing:.06em}
+/* Logout (Tom 2026-10-06): icon button top right, back to the password screen */
+.top-nav{margin-left:auto}
+.logout{flex:none;width:44px;height:44px;padding:0;display:inline-grid;place-items:center;border-radius:999px;background:var(--surface);border:1px solid var(--line);color:var(--muted);cursor:pointer;transition:background .15s,color .15s,border-color .15s}
+@media (hover:hover){.logout:hover{background:var(--soft);color:var(--ink);border-color:var(--muted)}}
+.logout:focus-visible{outline:2px solid var(--flag);outline-offset:2px}
+body.over-hero .logout{background:rgba(20,27,33,.45);border-color:rgba(255,255,255,.28);color:#E6ECF1;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+@media (hover:hover){body.over-hero .logout:hover{background:rgba(20,27,33,.7);color:#fff;border-color:rgba(255,255,255,.5)}}
+@media (max-width:640px){.top-nav{order:2;margin-left:0}.logout{order:1;margin-left:auto}}
 /* Password gate */
 html.locked .wrap{display:none}
 html:not(.locked) #gate{display:none}
@@ -540,6 +548,7 @@ button.tag::after{content:"";position:absolute;inset:-12px -3px}
       <button class="sec" role="tab" id="sec-cars" data-sec="cars">Auta</button>
       <button class="sec" role="tab" id="sec-places" data-sec="places">Místa</button>
     </nav>
+    <button type="button" class="logout" id="logout" aria-label="Odhlásit" title="Odhlásit"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg></button>
   </header>
 
   <main id="view"></main>
@@ -1854,6 +1863,13 @@ const GUEST_HASH = "9aea975aa81c0e9f85e86ed9eff9b64186302176f9c4ff8f867597b79bff
 // Site password gate (Tom 2026-10-06): the group password is checked by Supabase (rpc check_story_pass), so it isn't in the page.
 // It only hides the site from casual visitors; the repo and its files stay public on GitHub.
 const sha256 = async t => crypto.subtle ? [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t)))].map(x => x.toString(16).padStart(2,"0")).join("") : "";
+document.getElementById("logout").addEventListener("click", () => {
+  store.set("site-auth", ""); store.set("story-pass", "");
+  const html = document.documentElement, f = document.getElementById("gate-form");
+  html.classList.remove("guest"); html.classList.add("locked");
+  f.reset(); f.querySelector("button").disabled = false; document.getElementById("gate-msg").textContent = "";
+  scrollTo(0, 0); document.getElementById("gate-pass").focus();
+});
 document.getElementById("gate-form").addEventListener("submit", async e => {
   e.preventDefault();
   const pass = document.getElementById("gate-pass").value, msg = document.getElementById("gate-msg"), btn = e.target.querySelector("button"), html = document.documentElement;
