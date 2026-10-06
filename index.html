@@ -183,6 +183,10 @@ body.over-hero #view > .hero.has-img:first-child .tpick{top:calc(var(--top-h,80p
 .cc-vars{margin:4px 0 12px}
 .cc-mods{margin:6px 0 4px;padding-left:20px}.cc-mods li{margin:2px 0}
 .vcount{display:block;font-size:12px;color:var(--muted);font-weight:400}
+/* Fleet sort row (Tom 2026-10-06): label centred with the buttons, smaller buttons */
+.fleet-sort{padding:0;align-items:center;gap:5px}
+.fleet-sort .label{margin:0 4px 0 0;line-height:1}
+.fleet-sort .sec{min-height:30px;padding:6px 11px;font-size:10.5px;letter-spacing:.06em}
 .crew{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
 .driver{background:var(--surface);border:0;box-shadow:var(--card-shadow);border-radius:10px;padding:16px;display:grid;gap:10px}
 .driver .num{font-family:var(--display);font-weight:700;font-size:31px;line-height:.9;color:var(--accent)}
@@ -1454,7 +1458,7 @@ function viewMembers(part){
       </article>`).join("")}</div>`;
   function fleetHTML(){ return `
     <div class="subhead"><h3>Vozový park</h3>
-      <div class="sections" style="padding:0" role="group" aria-label="Řazení vozového parku">
+      <div class="sections fleet-sort" role="group" aria-label="Řazení vozového parku">
         <span class="label">Řadit</span>${FLEET_SORTS.map(([k,l]) => `<button class="sec" data-sort="${k}" aria-selected="${k===fleetSort}">${l}${k===fleetSort?(fleetDir<0?" ↓":" ↑"):""}</button>`).join("")}
       </div></div>
     <div class="fleet-wrap"><table class="fleet">
