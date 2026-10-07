@@ -841,6 +841,24 @@ function hero(t, stats, picker=""){
   </section>`;
 }
 
+/* Section heroes (Tom 2026-10-07): Lidé, Auta and Místa get a hero like the trips, with a random photo from the trips
+   on every page load (picked once per load so filtering doesn't swap it). Lidé: people only, Auta: cars only, Místa: landscape only. */
+const HERO_POOL = {
+  members:["jaro20-007","jaro21-018","jaro22-005","jaro24-028","jaro25e-020","jaro26-03","podzim24-003","podzim25-083","podzim26-004","podzim26-049"],
+  cars:["jaro20-019","jaro21-002","jaro22-016","jaro22-046","jaro24-004","jaro24-032","jaro25e-008","jaro25e-028","jaro26-01","jaro26-29","podzim23-010","podzim24-007","podzim25-096","podzim26-002","podzim26-039","podzim26-045"],
+  places:["jaro20-031","jaro20-035","jaro21-015","jaro26-15","podzim23-017","podzim23-019","podzim23-021","podzim25-013","podzim26-011"]
+};
+const SEC_HERO_IMG = Object.fromEntries(Object.entries(HERO_POOL).map(([k,a]) => [k, `photos/${a[Math.floor(Math.random()*a.length)]}.webp`]));
+function secHero(key, title, blurb, stats){
+  return `<section class="hero has-img sec-hero" style="--hero-img:url('${SEC_HERO_IMG[key]}')">
+    <div class="hero-in"><div>
+      <h2>${esc(title)}</h2>
+      <p>${esc(blurb)}</p>
+    </div>
+    <div class="stats">${stats.map(([k,v]) => `<div class="stat"><div class="label">${k}</div><div class="v">${v}</div></div>`).join("")}</div></div>
+  </section>`;
+}
+
 /* ---------- Next trip ---------- */
 // Whole calendar days until departure day, so Wednesday → Friday reads as 2.
 function daysLeft(t){ const d = new Date(t.depart), n = new Date(); const day = x => Date.UTC(x.getFullYear(), x.getMonth(), x.getDate()); return Math.max(0, Math.round((day(d) - day(n))/864e5)); }
@@ -1456,17 +1474,9 @@ function viewMembers(part){
   const rows = fleet.map(f => { const pf = (CAR_INFO[f.k]||{}).perf || {}; return {...f, ...CARS[f.k], ratio:CARS[f.k].kg/CARS[f.k].hp, acc:pf.acc, vmax:pf.vmax, approx:pf.approx}; })
     .sort((a,b) => (a[fleetSort]==null) - (b[fleetSort]==null) || ((a[fleetSort]||0) - (b[fleetSort]||0)) * fleetDir || b.hp - a.hp);
   if (part === "cars") return `
-    <div class="totals">
-      <div class="total"><span class="label">Auta</span><div class="v">${rows.length}</div></div>
-      <div class="total"><span class="label">Majitelé</span><div class="v">${new Set(rows.map(r => r.owner).filter(Boolean)).size}</div></div>
-      <div class="total"><span class="label">Odjeté tripy</span><div class="v">${past.length}</div></div>
-    </div>${fleetHTML()}`;
+    ${secHero("cars", "Auta", "Všechno, čím jsme na tripech jezdili, i to, co teprve přijede.", [["Auta", rows.length], ["Majitelé", new Set(rows.map(r => r.owner).filter(Boolean)).size], ["Odjeté tripy", past.length]])}${fleetHTML()}`;
   return `
-    <div class="totals">
-      <div class="total"><span class="label">Řidiči</span><div class="v">${MEMBERS.length}</div></div>
-      <div class="total"><span class="label">Spolujezdci</span><div class="v">${coOnly.length}</div></div>
-      <div class="total"><span class="label">Odjeté tripy</span><div class="v">${past.length}</div></div>
-    </div>
+    ${secHero("members", "Lidé", "Parta, která jezdí: řidiči, spolujezdci a jejich garáže.", [["Řidiči", MEMBERS.length], ["Spolujezdci", coOnly.length], ["Odjeté tripy", past.length]])}
     <div class="subhead"><h3>Řidiči</h3></div>
     <div class="members">${people.map(p => `
       <article class="member">
@@ -1599,7 +1609,7 @@ function viewPlaces(){
   const cats = Object.keys(PLACE_CATS).filter(k => PLACES.some(p => p.cat === k));
   const list = shownPlaces();
   return `
-    <div class="subhead"><h3>Místa</h3><span class="note">${PLACES.length} ${pl(PLACES.length,"místo","místa","míst")} · kavárny, restaurace a další zastávky, kam se rádi vracíme</span></div>
+    ${secHero("places", "Místa", "Kavárny, restaurace, vyhlídky a další zastávky, kam se rádi vracíme.", [["Místa", PLACES.length], ["Kategorie", cats.length]])}
     ${cats.length > 1 ? `<div class="sections" role="group" aria-label="Kategorie míst"><button class="sec" data-pcat="all" aria-selected="${placeCat==="all"}">Vše</button>${cats.map(k => `<button class="sec" data-pcat="${k}" aria-selected="${placeCat===k}"><span class="pdot" style="background:${PLACE_CATS[k].c}"></span>${PLACE_CATS[k].l}</button>`).join("")}</div>` : ""}
     <div class="pmap" id="pmap" role="region" aria-label="Mapa míst">
       <div class="pmap-tiles"></div><div class="pmap-pins"></div>
