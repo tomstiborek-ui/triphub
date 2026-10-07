@@ -1563,7 +1563,7 @@ const PLACE_CATS = {
   // Tom 2026-10-06: clearly different colours: coffee brown kavárny, blue restaurace, yellow vyhlídky.
   // c = fill (pins, number badges, chip dots), t = text on that fill, i = icon on the card's pale tile (defaults: white text, icon in c).
   kavarna:{l:"Kavárna", c:"#6F4E37"}, restaurace:{l:"Restaurace", c:"#1E6FD9"}, hospoda:{l:"Hospoda", c:"#C2410C"},
-  vyhlidka:{l:"Vyhlídka", c:"#F2C200", t:"#3A2E00", i:"#A57C00"}, silnice:{l:"Silnice", c:"#0F766E"}, nocleh:{l:"Nocleh", c:"#7C3AED"}, jine:{l:"Jiné", c:"#5F6D78"}
+  vyhlidka:{l:"Vyhlídka", c:"#F2C200", t:"#3A2E00", i:"#A57C00"}, silnice:{l:"Silnice", c:"#0F766E"}, ubytovani:{l:"Ubytování", c:"#16A34A"}, jine:{l:"Jiné", c:"#5F6D78"}
 };
 const PLACES = [
   {id:"manolo", n:"Manolo Café", cat:"kavarna", lat:49.3967, lon:15.5803, approx:true, addr:"Vrchlického 1971/25, Jihlava",
@@ -1574,7 +1574,9 @@ const PLACES = [
   {id:"ecce-homo", n:"Vyhlídka Ecce Homo", cat:"vyhlidka", lat:49.7436063, lon:17.3179759},
   {id:"kross-house", n:"KROSS HOUSE", cat:"restaurace", lat:48.7501831, lon:17.5663108},
   {id:"panorama-cafe", n:"Panorama Café", cat:"kavarna", lat:50.5880546, lon:15.156456}, // Tom 2026-10-05: kavárna (first asked as restaurace)
-  {id:"black-cup", n:"THE BLACK CUP – Espresso Bar", cat:"kavarna", lat:49.5595439, lon:16.0726835}
+  {id:"black-cup", n:"THE BLACK CUP – Espresso Bar", cat:"kavarna", lat:49.5595439, lon:16.0726835},
+  // Tom 2026-10-07: new category Ubytování (green, bed icon); coordinates from his Google Maps link.
+  {id:"volarska-roubenka", n:"Volarská roubenka", cat:"ubytovani", lat:48.9157671, lon:13.8908692}
 ];
 // Line icons shown on a card when the place has no photo (img).
 const PLACE_ICON = {
@@ -1583,7 +1585,7 @@ const PLACE_ICON = {
   hospoda:'<path d="M6 7h10v12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2z"/><path d="M16 10h2a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-2"/><path d="M6 7a2.5 2.5 0 0 1 3-3 3 3 0 0 1 5 .5A2.3 2.3 0 0 1 16 7"/>',
   vyhlidka:'<path d="M2 20l7-11 4 6 3-4 6 9z"/><circle cx="17" cy="5" r="2"/>',
   silnice:'<path d="M8 3L4 21M16 3l4 18M12 4v3M12 11v3M12 18v3"/>',
-  nocleh:'<path d="M3 18V7M3 13h18v5M21 13a3 3 0 0 0-3-3h-7v3"/><circle cx="7" cy="10.5" r="1.7"/>',
+  ubytovani:'<path d="M3 18V7M3 13h18v5M21 13a3 3 0 0 0-3-3h-7v3"/><circle cx="7" cy="10.5" r="1.7"/>',
   jine:'<path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/>'
 };
 let placeCat = "all", placeSel = null, pmapView = null;
