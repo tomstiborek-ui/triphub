@@ -278,6 +278,7 @@ html.guest #compose,html.guest .story-del{display:none!important}
 .iday-sum .chev{position:absolute;right:18px;top:50%;width:10px;height:10px;border-right:2px solid var(--ink);border-bottom:2px solid var(--ink);transform:translateY(-70%) rotate(45deg);transition:transform .15s}
 .iday-wrap[open] .iday-sum .chev{transform:translateY(-30%) rotate(-135deg)}
 .iday-sum:focus-visible{outline:2px solid var(--flag);outline-offset:2px;border-radius:10px}
+.sday{padding:0 18px 18px}.sday .mapcard{margin-top:0}
 .iday{padding:0 18px 16px;display:grid;grid-template-columns:150px 1fr;gap:18px}
 .iday-map{grid-column:1/-1;margin:4px 0 0;border:0;box-shadow:var(--card-shadow);border-radius:8px;overflow:hidden}
 .iday-map-open{display:block;width:100%;padding:0;border:0;background:var(--soft);cursor:zoom-in}
@@ -899,7 +900,8 @@ function routeBox(t,d){
 
 // Itinerary days that are expanded; all start collapsed.
 const openDays = new Set();
-document.addEventListener("toggle", e => { const d = e.target.dataset && +e.target.dataset.iday; if (d) e.target.open ? openDays.add(d) : openDays.delete(d); }, true);
+// Keys are "tripId:day" so opening a day on one trip doesn't open it on another.
+document.addEventListener("toggle", e => { const d = e.target.dataset && e.target.dataset.iday; if (d) e.target.open ? openDays.add(d) : openDays.delete(d); }, true);
 function meetCard(t){
   const m = t.meetInfo; if (!m) return "";
   return `<section class="meet-card" aria-labelledby="meet-h">
@@ -994,7 +996,7 @@ function itinHTML(t){
   return `<div class="itin">${t.days.map(d => { const vs = d.variants || null, kms = vs ? vs.map(v=>v.km).filter(Boolean) : [];
       const kmTxt = kms.length > 1 ? `${fmt(Math.min(...kms))}–${fmt(Math.max(...kms))} km` : d.km ? `${fmt(d.km)} km` : "";
       return `
-      <details class="iday-wrap" data-iday="${d.d}"${openDays.has(d.d)?" open":""}>
+      <details class="iday-wrap" data-iday="${t.id}:${d.d}"${openDays.has(`${t.id}:${d.d}`)?" open":""}>
         <summary class="iday-sum"><span class="iday-no"><b>Den ${d.d}</b></span><h4>${esc(d.t)}</h4>
           <span class="meta">${esc(d.date)}${kmTxt?` · ${kmTxt}`:""}${vs && vs.length > 1 ? ` · ${vs.length} ${pl(vs.length,"varianta","varianty","variant")}`:""}</span><span class="chev" aria-hidden="true"></span></summary>
       <article class="iday">
@@ -1239,13 +1241,16 @@ function viewRoads(t){
   if (Array.isArray(t.days) && t.days.length) return itinHTML(t);
   if (!t.stages.length) return `<div class="empty">Zatím žádné trasy.</div>`;
   const days = [...new Set(t.stages.map(s => s.d))];
-  return days.map(d => {
+  return `<div class="itin">${days.map(d => {
     const st = t.stages.filter(s => s.d === d);
     const trs = st.map(s => TRACKS[s.n]).filter(Boolean);
     const km = trs.reduce((a,x)=>a+x.km,0), climb = trs.reduce((a,x)=>a+x.climb,0);
-    return `<section class="dayblock">
-      <div class="subhead"><h3>Den ${d}${st[0].date?` · ${esc(st[0].date)}`:""}</h3>
-        ${trs.length?`<span class="label">${fmt(Math.round(km))} km · ≈${fmt(climb)} m stoupání</span>`:""}</div>
+    // Tom 2026-10-08: days collapse like the Podzim 2026 itinerary.
+    const ns = st.map(s => s.n), key = `${t.id}:${d}`;
+    return `<details class="iday-wrap sday-wrap" data-iday="${key}"${openDays.has(key)?" open":""}>
+      <summary class="iday-sum"><span class="iday-no"><b>Den ${d}</b></span><h4>${ns.length > 1 ? `Etapy ${ns[0]}–${ns[ns.length-1]}` : `Etapa ${ns[0]}`}</h4>
+        <span class="meta">${st[0].date?esc(st[0].date):""}${trs.length?` · ${fmt(Math.round(km))} km · ≈${fmt(climb)} m stoupání`:""}</span><span class="chev" aria-hidden="true"></span></summary>
+      <div class="sday">
       ${trs.length ? `<figure class="mapcard">${MAP_IMAGES[d] ? (ZOOM_MAPS[d] ? `<div class="zmap" data-day="${d}" data-stages="${st.filter(s=>TRACKS[s.n]).map(s=>s.n).join(",")}"><img class="daymap" src="${MAP_IMAGES[d]}" alt="Mapa trasy dne ${d}" width="1200" height="900"><canvas hidden aria-label="Přibližovatelná mapa trasy dne ${d}"></canvas><div class="zctl"><button type="button" data-zm="in" aria-label="Přiblížit">+</button><button type="button" data-zm="out" aria-label="Oddálit">−</button><button type="button" data-zm="fit" aria-label="Zobrazit celou trasu">⤢</button></div></div>` : `<img class="daymap" src="${MAP_IMAGES[d]}" alt="Mapa trasy dne ${d}" width="1200" height="900">`) : dayMapSVG(st)}
         <figcaption>${st.map((s,i)=>`<span class="key"><i style="background:${SC(i)}"></i>${esc(s.t)}${TRACKS[s.n]?` · ${fmt(TRACKS[s.n].km)} km`:" · zatím bez GPX"}</span>`).join("")}<span class="key"><i class="fin"></i>Cíl</span>${MAP_IMAGES[d] ? `<span class="key" style="margin-left:auto;color:var(--muted)">Mapová data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">přispěvatelé OpenStreetMap</a></span>` : ""}</figcaption>
       </figure>` : `<div class="empty">Mapa se objeví, až budou přidané GPX soubory pro tento den.</div>`}
@@ -1260,8 +1265,8 @@ function viewRoads(t){
           </div>
           ${tr?`<div class="profile">${profileSVG(tr.prof, SC(i))}<div class="cap"><span class="label">Výškový profil</span></div></div>`:""}
         </article>`; }).join("")}</div>
-    </section>`;
-  }).join("");
+      </div></details>`;
+  }).join("")}</div>`;
 }
 
 function photoSVG(hue, seed){
