@@ -1463,12 +1463,15 @@ function tripDayInfo(t){
       climb: trs.reduce((a,x)=>a+x.climb,0), lines: trs.map(x => x.line), sub: st.length > 1 ? `${st.length} ${pl(st.length,"etapa","etapy","etap")}` : ""};
   });
 }
+// Whole-trip maps on OpenStreetMap streets (from the OSM thread, 2026-10-08). Podzim 2026 shows Day 2 as Lehká, so another variant falls back to the line map.
+const TRIP_MAPS = {jaro26:"maps/jaro26-trip.jpg", podzim26:"maps/podzim26-trip.jpg"};
 function viewTripHome(t){
   const info = tripDayInfo(t), segs = info.flatMap((x,i) => x.lines.map((l,j) => ({line:l, color:SC(i), mark: j ? null : x.d})));
   const km = info.reduce((a,x) => a + (x.km||0), 0);
+  const img = TRIP_MAPS[t.id] && !(Array.isArray(t.days) && t.days.some(d => varSel(d))) ? TRIP_MAPS[t.id] : "";
   return `<section class="trip-home">
-    <figure class="mapcard">${segs.length ? routeSVG(segs, `Mapa celého tripu ${t.name}`) : `<div class="empty">Mapa se objeví, až budou přidané GPX soubory.</div>`}
-      <figcaption>${info.map((x,i) => `<span class="key"><i style="background:${SC(i)}"></i>Den ${x.d}${x.km?` · ${fmt(x.km)} km`:""}</span>`).join("")}<span class="key"><i class="fin"></i>Cíl</span>${km?`<span class="key" style="margin-left:auto">Celkem ≈${fmt(km)} km</span>`:""}</figcaption>
+    <figure class="mapcard">${img ? `<img class="daymap" src="${img}" alt="Mapa celého tripu ${esc(t.name)}" width="1200" height="900">` : segs.length ? routeSVG(segs, `Mapa celého tripu ${t.name}`) : `<div class="empty">Mapa se objeví, až budou přidané GPX soubory.</div>`}
+      <figcaption>${info.map((x,i) => `<span class="key"><i style="background:${SC(i)}"></i>Den ${x.d}${x.km?` · ${fmt(x.km)} km`:""}</span>`).join("")}<span class="key"><i class="fin"></i>Cíl</span>${km?`<span class="key" style="margin-left:auto">Celkem ≈${fmt(km)} km</span>`:""}${img?`<span class="key" style="width:100%;color:var(--muted)">Mapová data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">přispěvatelé OpenStreetMap</a></span>`:""}</figcaption>
     </figure>
     <div class="home-days">${info.map((x,i) => `<button type="button" class="home-day" data-tab="d${x.d}">
       <span class="iday-no"><b style="background:${SC(i)}">Den ${x.d}</b></span><h4>${esc(x.title)}</h4>
