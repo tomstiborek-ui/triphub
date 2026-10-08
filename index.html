@@ -1524,7 +1524,11 @@ function viewPast(){
   const t = trip(pastId);
   if (!t) return `<div class="empty">Zatím žádné tripy.</div>`;
   pastTab = fixTab(t, pastTab);
-  return `${hero(t, t.stats || [["Dny", Array.isArray(t.days) ? t.days.length : t.days || new Set(t.stages.map(x=>x.d)).size, ""], Array.isArray(t.days) ? ["Vzdálenost", t.km ? "≈"+fmt(t.km) : "–", t.km ? "km" : ""] : ["Etapy", t.stages.length || "–", ""],["Fotky", t.photos.length, ""],["Auta", t.crew.length || (t.cars||[]).length || "–", ""]], tripPicker(past, t))}
+  // Vzdálenost wherever the driven distance is known (Tom 2026-10-08): t.km, or the sum of the stage GPX tracks; a stage trip then shows its etapy next to Dny.
+  const nDays = Array.isArray(t.days) ? t.days.length : t.days || new Set(t.stages.map(x=>x.d)).size;
+  const km = t.km || (!Array.isArray(t.days) && t.stages.length ? Math.round(t.stages.reduce((a,x) => a + (TRACKS[x.n]?.km || 0), 0)) : 0);
+  const stageKm = !Array.isArray(t.days) && km;
+  return `${hero(t, t.stats || [["Dny", nDays, stageKm ? `${t.stages.length} ${pl(t.stages.length,"etapa","etapy","etap")}` : ""], Array.isArray(t.days) || km ? ["Vzdálenost", km ? "≈"+fmt(km) : "–", km ? "km" : ""] : ["Etapy", t.stages.length || "–", ""],["Fotky", t.photos.length, ""],["Auta", t.crew.length || (t.cars||[]).length || "–", ""]], tripPicker(past, t))}
     <nav class="tabs" role="tablist" aria-label="Části tripu">${tripTabs(t).map(([k,l]) =>
       `<button class="tab" role="tab" data-tab="${k}" aria-selected="${k===pastTab}">${l}</button>`).join("")}</nav>
     ${pastTab === "home" ? viewTripHome(t) : /^d\d+$/.test(pastTab) ? viewTripDay(t, +pastTab.slice(1)) : PAST_TABS[pastTab][1](t)}`;
