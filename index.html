@@ -43,6 +43,12 @@ button,input,textarea,select{font:inherit;color:inherit}
 
 /* Header */
 .top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding-block:20px 12px}
+/* Fixed top menu (Tom 2026-10-08): sticks to the top; full-width backdrop, transparent while it sits over a hero photo */
+.top{position:sticky;top:0;z-index:50}
+.top::before{content:"";position:absolute;inset:0 calc(50% - 50vw);z-index:-1;background:var(--bg);transition:background .2s,box-shadow .2s}
+body.scrolled .top::before{box-shadow:0 1px 0 var(--line),0 6px 16px rgba(0,0,0,.06)}
+body.over-hero:not(.top-solid) .top::before{background:transparent;box-shadow:none}
+html{scroll-padding-top:calc(var(--top-h,80px) + 8px)}
 .brand{display:flex;align-items:center;gap:10px;color:inherit;text-decoration:none}
 .brand:focus-visible{outline:2px solid var(--flag);outline-offset:4px;border-radius:8px}
 .brand h1{font-size:21px}
@@ -169,13 +175,13 @@ button,input,textarea,select{font:inherit;color:inherit}
 .tpick-opt:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 @media (max-width:640px){.tpick{top:12px}}
 /* Hero under the top menu */
-body.over-hero .top{position:relative;z-index:6;color:#F2F5F8}
-body.over-hero .brand svg rect{fill:rgba(255,255,255,.18)!important}
-body.over-hero .brand svg path{stroke:#fff!important}
-body.over-hero .brand h1{text-shadow:0 1px 3px rgba(0,0,0,.45)}
-body.over-hero .top-nav .sec{background:rgba(20,27,33,.45);border-color:rgba(255,255,255,.28);color:#E6ECF1;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
-body.over-hero .top-nav .sec[aria-selected="true"]{background:#F2F5F8;color:#1E262C;border-color:#F2F5F8}
-@media (hover:hover){body.over-hero .top-nav .sec:not([aria-selected="true"]):hover{background:rgba(20,27,33,.7);color:#fff;border-color:rgba(255,255,255,.5)}}
+body.over-hero:not(.top-solid) .top{color:#F2F5F8}
+body.over-hero:not(.top-solid) .brand svg rect{fill:rgba(255,255,255,.18)!important}
+body.over-hero:not(.top-solid) .brand svg path{stroke:#fff!important}
+body.over-hero:not(.top-solid) .brand h1{text-shadow:0 1px 3px rgba(0,0,0,.45)}
+body.over-hero:not(.top-solid) .top-nav .sec{background:rgba(20,27,33,.45);border-color:rgba(255,255,255,.28);color:#E6ECF1;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+body.over-hero:not(.top-solid) .top-nav .sec[aria-selected="true"]{background:#F2F5F8;color:#1E262C;border-color:#F2F5F8}
+@media (hover:hover){body.over-hero:not(.top-solid) .top-nav .sec:not([aria-selected="true"]):hover{background:rgba(20,27,33,.7);color:#fff;border-color:rgba(255,255,255,.5)}}
 body.over-hero #view > .hero.has-img:first-child{margin-top:calc(-1 * var(--top-h,80px));padding-top:calc(var(--hero-top) + var(--top-h,80px));background-image:linear-gradient(180deg,rgba(20,27,33,.55) 0,rgba(20,27,33,0) calc(var(--top-h,80px) + 70px)),linear-gradient(0deg,rgba(20,27,33,.82) 0%,rgba(20,27,33,.66) calc(100% - var(--hero-top) - var(--top-h,80px) - 170px),rgba(20,27,33,.22) calc(100% - var(--hero-top) - var(--top-h,80px) + 10px),rgba(20,27,33,0) 100%),var(--hero-img)}
 body.over-hero #view > .hero.has-img:first-child .tpick{top:calc(var(--top-h,80px) + 16px)}
 .vtag{display:inline-block;margin-right:6px;padding:2px 6px;border-radius:3px;background:var(--soft);font:500 10px/1.2 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);vertical-align:1px}
@@ -192,8 +198,8 @@ body.over-hero #view > .hero.has-img:first-child .tpick{top:calc(var(--top-h,80p
 .logout{flex:none;width:44px;height:44px;padding:0;display:inline-grid;place-items:center;border-radius:999px;background:var(--surface);border:1px solid var(--line);color:var(--muted);cursor:pointer;transition:background .15s,color .15s,border-color .15s}
 @media (hover:hover){.logout:hover{background:var(--soft);color:var(--ink);border-color:var(--muted)}}
 .logout:focus-visible{outline:2px solid var(--flag);outline-offset:2px}
-body.over-hero .logout{background:rgba(20,27,33,.45);border-color:rgba(255,255,255,.28);color:#E6ECF1;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
-@media (hover:hover){body.over-hero .logout:hover{background:rgba(20,27,33,.7);color:#fff;border-color:rgba(255,255,255,.5)}}
+body.over-hero:not(.top-solid) .logout{background:rgba(20,27,33,.45);border-color:rgba(255,255,255,.28);color:#E6ECF1;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+@media (hover:hover){body.over-hero:not(.top-solid) .logout:hover{background:rgba(20,27,33,.7);color:#fff;border-color:rgba(255,255,255,.5)}}
 @media (max-width:640px){.top-nav{order:2;margin-left:0}.logout{order:1;margin-left:auto}}
 /* Password gate */
 html.locked .wrap{display:none}
@@ -1825,8 +1831,16 @@ function heroUnderTop(){
   const v = document.getElementById("view"), f = v.firstElementChild, on = !!(f && f.matches(".hero.has-img"));
   document.body.classList.toggle("over-hero", on);
   document.documentElement.style.setProperty("--top-h", document.querySelector(".top").offsetHeight + "px");
+  topState();
 }
-addEventListener("resize", () => { if (document.body.classList.contains("over-hero")) heroUnderTop(); });
+addEventListener("resize", () => { if (document.body.classList.contains("over-hero")) heroUnderTop(); else topState(); });
+// Menu turns solid once the hero photo has scrolled out from under it.
+function topState(){
+  const b = document.body, top = document.querySelector(".top"), h = top.offsetHeight, f = document.getElementById("view").firstElementChild;
+  b.classList.toggle("scrolled", scrollY > 4);
+  b.classList.toggle("top-solid", !b.classList.contains("over-hero") || !f || f.getBoundingClientRect().bottom < h + 1);
+}
+addEventListener("scroll", topState, {passive:true});
 function render(){
   document.querySelectorAll(".sections > .sec").forEach(b => b.setAttribute("aria-selected", b.dataset.sec===sec));
   document.getElementById("view").innerHTML = SECTIONS[sec]();
