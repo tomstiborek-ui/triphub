@@ -704,13 +704,13 @@ const TRIPS = [
       {d:1, n:2, date:"pá 1. 5.", t:"Etapa 2", r:"Rudník → Lubawka (PL)", mapy:"https://mapy.com/s/relarunelo"},
       {d:1, n:3, date:"pá 1. 5.", t:"Etapa 3", r:"Lubawka (PL) → Broumov", mapy:"https://mapy.com/s/gobejeluvo"},
       // Tom 2026-10-08: day 1 ran longer than planned, so it covered etapy 1–6; etapy 7–9 were day 2
-      // (GPX in /mnt/project-files/trips/jaro-2026/etapa-7..9.gpx). Day 3 still to come.
+      // (GPX in /mnt/project-files/trips/jaro-2026/etapa-7..9.gpx). Day 3 still to come. Day 2 start/end towns read off the OSM tiles at the GPX endpoints.
       {d:1, n:4, date:"pá 1. 5.", t:"Etapa 4", mapy:"https://mapy.com/s/pakelasupa"},
       {d:1, n:5, date:"pá 1. 5.", t:"Etapa 5", mapy:"https://mapy.com/s/noturezare"},
       {d:1, n:6, date:"pá 1. 5.", t:"Etapa 6", mapy:"https://mapy.com/s/dujakezale"},
-      {d:2, n:7, date:"so 2. 5.", t:"Etapa 7", mapy:"https://mapy.com/s/daramacunu"},
-      {d:2, n:8, date:"so 2. 5.", t:"Etapa 8", mapy:"https://mapy.com/s/gukubogetu"},
-      {d:2, n:9, date:"so 2. 5.", t:"Etapa 9", r:"→ Autocamp Šternberk", mapy:"https://mapy.com/s/fadagareze"}
+      {d:2, n:7, date:"so 2. 5.", t:"Etapa 7", r:"Králíky → Javorník", mapy:"https://mapy.com/s/daramacunu"},
+      {d:2, n:8, date:"so 2. 5.", t:"Etapa 8", r:"Javorník → Filipová (Loučná nad Desnou)", mapy:"https://mapy.com/s/gukubogetu"},
+      {d:2, n:9, date:"so 2. 5.", t:"Etapa 9", r:"Filipová (Loučná nad Desnou) → Autocamp Šternberk", mapy:"https://mapy.com/s/fadagareze"}
     ],
     album:"https://photos.app.goo.gl/k1nU7nbSyD25XojH9",
     photos:[["01",1600,1067],["02",1067,1600],["03",1600,1067],["04",1067,1600],["05",1600,1067],["06",1600,1067],["07",1600,1067],["08",1067,1600],["09",1067,1600],["10",1067,1600],["11",1067,1600],["12",1600,1067],["13",1067,1600],["14",1600,1067],["15",1600,695],["16",1067,1600],["17",1067,1600],["18",1067,1600],["19",1067,1600],["20",1600,1067],["21",1600,1067],["22",1067,1600],["23",1067,1600],["24",1067,1600],["25",1067,1600],["26",1067,1600],["27",1600,703],["28",1067,1600],["29",1600,1067],["30",1067,1600],["31",1067,1600],["32",1067,1600],["33",1067,1600],["34",1067,1600],["35",1067,1600],["36",1067,1600],["37",1600,1067],["38",1067,1600],["39",1067,1600],["40",1600,1067],["41",1067,1600],["42",1600,1067],["43",1600,1067],["44",1067,1600],["45",1600,1067],["46",1600,1067],["47",1067,1600],["48",1600,1067],["49",1600,1067]].map(([n,w,h]) => ({src:`photos/jaro26-${n}.webp`, thumb:`photos/jaro26-${n}-t.webp`, w, h})),
