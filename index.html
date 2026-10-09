@@ -658,9 +658,19 @@ const member = n => MEMBERS.find(p => p.n === n);
 
 const TRIPS = [
   {
-    // Next trip (Tom 2026-10-05): spring 2027, Jeseníky and the Czech–Polish border; 5–6 cars expected.
-    // Cover drawn by trips/tools/mk_jaro27_cover.py. NA = Jindřich's 1.6, second NB = Jára's (Tom 2026-10-05).
-    id:"jaro27", name:"Jaro 2027", when:"jaro 2027 · termín upřesníme", status:"next",
+    // Next trip (Tom 2026-10-09): spring 2027 around Jindřichův Hradec and Třeboň; nothing else known yet.
+    // Mucha-style cover (Tom 2026-10-09), drawn by trips/tools/mk_jaro27_mucha.js. storeId keeps its browser data apart from Podzim 2027's.
+    id:"jaro27", storeId:"jaro27-jh", name:"Jaro 2027", when:"jaro 2027 · termín upřesníme", status:"next",
+    cover:"photos/jaro27-mucha.jpg", coverPos:"center top",
+    blurb:"Okolí Jindřichova Hradce a Třeboně: zámek, rybníky a hráze s duby. Termín, posádku i trasy teprve plánujeme.",
+    cars:[], km:0, crew:[], codrivers:[], photos:[], stages:[], stories:[],
+    checks:[{g:"Základ", items:["Karimatka","Spacák","Nabíječky","Moka konvice","Mlýnek na kafe","Kafe","Přenosný vařič","Vysílačka","Olej","Židličky"]}],
+    days:[]
+  },
+  {
+    // Upcoming trip planned as "Jaro 2027" (Tom 2026-10-05), moved to autumn 2027 (Tom 2026-10-09): Jeseníky and the Czech–Polish border.
+    // NA = Jindřich's 1.6, second NB = Jára's (Tom 2026-10-05). storeId:"jaro27" keeps checklist ticks and route links saved under the old id.
+    id:"podzim27", storeId:"jaro27", name:"Podzim 2027", when:"podzim 2027 · termín upřesníme", status:"next",
     cover:"photos/jaro27-picasso.jpg", coverPos:"center top", // Picasso-style cover, Tom 2026-10-06 (trips/tools/mk_jaro27_picasso.js); Warhol version: photos/jaro27-warhol.jpg
     blurb:"Jeseníky a hory na česko-polské hranici. Čekáme 6–7 aut: Porsche 944 S2, Porsche Cayman, MX-5 NC, dvakrát MX-5 NB, Legacy Turbo a nejspíš i Alfa 146. Termín, sraz i trasy teprve plánujeme.",
     carsExpected:"6–7", // Tom 2026-10-05: Petr will probably bring the Alfa 146. Tom 2026-10-06: Jindra comes in his new Cayman instead of the NA.
@@ -839,7 +849,7 @@ const TRIPS = [
   }
 ];
 
-let sec = TRIPS.some(t => t.status==="next") ? "next" : "past", pastId = (TRIPS.find(t => t.status==="done")||{}).id, pastTab = "roads";
+let nextId = "", sec = TRIPS.some(t => t.status==="next") ? "next" : "past", pastId = (TRIPS.find(t => t.status==="done")||{}).id, pastTab = "roads";
 const trip = id => TRIPS.find(t => t.id === id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const avatar = n => `<span class="avatar">${esc(n.split(" ").filter(Boolean).map(w => w[0]).slice(0,2).join("")||"?")}</span>`;
@@ -896,7 +906,7 @@ function mapyRoute(pts){
 const dayPts = d => (d.stops || (d.variants ? d.variants[varSel(d)].stops : [])).map(s => s[4]);
 const tripPts = t => { const all = t.days.flatMap(dayPts).filter(Boolean); const u = [...new Set(all)]; return u.length > 17 ? [u[0], ...u.slice(1,-1).filter((_,i,a)=>i % Math.ceil(a.length/15) === 0), u[u.length-1]] : u; };
 const store = { get(k){ try{ return localStorage.getItem(k) || ""; }catch(_){ return ""; } }, set(k,v){ try{ v ? localStorage.setItem(k,v) : localStorage.removeItem(k); }catch(_){} } };
-const routeKey = (t,d) => `route:${t.id}:${d==null?"trip":d}`;
+const routeKey = (t,d) => `route:${t.storeId||t.id}:${d==null?"trip":d}`;
 const routeFor = (t,d) => store.get(routeKey(t,d)) || (d==null ? mapyRoute(tripPts(t)) : mapyRoute(dayPts(t.days[d-1])));
 const isMapy = v => { try{ const u = new URL(v); return /(^|\.)mapy\.(cz|com)$/.test(u.hostname) && u.protocol === "https:"; }catch(_){ return false; } };
 function routeBox(t,d){
@@ -1034,11 +1044,14 @@ function itinDay(t, d, solo){
         ${dayPhotos(t,d)}
       </article></${W}>`;
 }
+// Several upcoming trips (Tom 2026-10-09): the first in TRIPS is the default, the hero picker switches between them.
+const upcomingTrips = () => TRIPS.filter(x => x.status === "next");
+const curNext = () => upcomingTrips().find(x => x.id === nextId) || upcomingTrips()[0];
 function viewNext(){
-  const t = TRIPS.find(x => x.status === "next");
+  const t = curNext(), ups = upcomingTrips();
   if (!t) return `<div class="empty">Zatím není naplánovaný žádný trip. Pošli Claudovi odkazy z Mapy.cz na další trip a objeví se tady i s itinerářem.</div>`;
   const inCount = t.crew.filter(c => c[2]==="in" && c[1]).length, carCrew = t.crew.filter(c => c[1]).length;
-  return hero(t, [t.depart ? ["Odjezd za", daysLeft(t), pl(daysLeft(t),"den","dny","dní"), "countdown"] : ["Odjezd za", "–", ""],["Vzdálenost",t.km?"≈"+fmt(t.km):"–",t.km?"km":""],["Aut jede",t.carsExpected||(t.crew.length?inCount:((t.cars||[]).length||"–")),!t.carsExpected&&t.crew.length?`z ${carCrew}`:""],["Dny",t.days.length||"–",""]]) + `
+  return hero(t, [t.depart ? ["Odjezd za", daysLeft(t), pl(daysLeft(t),"den","dny","dní"), "countdown"] : ["Odjezd za", "–", ""],["Vzdálenost",t.km?"≈"+fmt(t.km):"–",t.km?"km":""],["Aut jede",t.carsExpected||(t.crew.length?inCount:((t.cars||[]).length||"–")),!t.carsExpected&&t.crew.length?`z ${carCrew}`:""],["Dny",t.days.length||"–",""]], ups.length > 1 ? tripPicker(ups, t, "next-trip") : "") + `
     ${meetCard(t)}
     <div class="subhead"><h3>Itinerář</h3></div>
     ${t.days.length ? routeBox(t,null) + itinHTML(t) : `<div class="empty">Trasy zatím plánujeme. Pošli Claudovi odkazy z Mapy.cz nebo GPX a itinerář se objeví tady.</div>`}
@@ -1051,18 +1064,18 @@ function viewNext(){
 }
 
 // Packing checklist: ticks are kept per person in this browser (each person packs their own things).
-const checkKey = (t,item) => `check:${t.id}:${item}`;
+const checkKey = (t,item) => `check:${t.storeId||t.id}:${item}`;
 function checklist(t){
   const groups = (t.checks||[]).filter(g => g.items && g.items.length); if (!groups.length) return "";
   const all = groups.flatMap(g => g.items), done = all.filter(i => store.get(checkKey(t,i))).length;
   return `<div class="subhead"><h3>Checklist</h3><span class="label" data-check-count>${done} z ${all.length}</span></div>
       <section class="panel checklist">${groups.map(g => `<div class="check-group"><span class="label">${esc(g.g)}</span>
-        <ul>${g.items.map(i => `<li><label><input type="checkbox" data-check="${esc(i)}" data-trip="${esc(t.id)}"${store.get(checkKey(t,i))?" checked":""}><span>${esc(i)}</span></label></li>`).join("")}</ul></div>`).join("")}
+        <ul>${g.items.map(i => `<li><label><input type="checkbox" data-check="${esc(i)}" data-check-trip="${esc(t.storeId||t.id)}"${store.get(checkKey(t,i))?" checked":""}><span>${esc(i)}</span></label></li>`).join("")}</ul></div>`).join("")}
         <p class="note">Odškrtnutí se ukládá jen v tomhle prohlížeči.</p></section>`;
 }
 document.addEventListener("change", e => {
   const c = e.target.closest("[data-check]"); if (!c) return;
-  store.set(checkKey({id:c.dataset.trip}, c.dataset.check), c.checked ? "1" : "");
+  store.set(checkKey({id:c.dataset.checkTrip}, c.dataset.check), c.checked ? "1" : "");
   const box = c.closest(".checklist"), n = box.querySelectorAll("[data-check]").length, k = box.querySelectorAll("[data-check]:checked").length;
   const cnt = document.querySelector("[data-check-count]"); if (cnt) cnt.textContent = `${k} z ${n}`;
 });
@@ -1491,12 +1504,12 @@ function viewTripDay(t, d){
 }
 // Trip picker in the hero's top-right corner (Tom 2026-10-06): newest first, also within each year (Tom).
 const tripYear = t => +((t.when.match(/(19|20)\d\d/g) || [""]).pop()) || 0;
-function tripPicker(past, t){
+function tripPicker(past, t, attr = "trip"){
   const years = [...new Set(past.map(tripYear))].sort((a,b) => b - a);
   return `<div class="tpick">
     <button type="button" class="tpick-btn" data-tpick aria-haspopup="true" aria-expanded="false" aria-controls="tpick-list"><span class="label">Trip</span><span class="tpick-cur">${esc(t.name)}</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
     <div class="tpick-list" id="tpick-list" hidden>${years.map(y => `<div class="tpick-year" role="group" aria-label="${y}"><span class="label">${y}</span>${past.filter(p => tripYear(p)===y).map(p =>
-      `<button type="button" class="tpick-opt" data-trip="${p.id}"${p.id===t.id?` aria-current="true"`:""}><strong>${esc(p.name)}</strong><span>${esc(p.when)}</span></button>`).join("")}</div>`).join("")}</div>
+      `<button type="button" class="tpick-opt" data-${attr}="${p.id}"${p.id===t.id?` aria-current="true"`:""}><strong>${esc(p.name)}</strong><span>${esc(p.when)}</span></button>`).join("")}</div>`).join("")}</div>
   </div>`;
 }
 function tpickOpen(open, focus){
@@ -1542,7 +1555,7 @@ const FLEET_SORTS = [["hp","Výkon",-1],["kg","Hmotnost",1],["ratio","kg/k",1],[
 function viewMembers(part){
   if (!MEMBERS.length && !Object.keys(CARS).length) return `<div class="empty">Zatím žádní členové. Pošli Claudovi jména kamarádů a auta, kterými jeli na jednotlivých tripech, a objeví se tady i se svou garáží.</div>`;
   const past = TRIPS.filter(t => t.status === "done");
-  const next = TRIPS.find(t => t.status === "next");
+  const next = upcomingTrips().find(t => t.crew.length || (t.cars||[]).length) || upcomingTrips()[0];
   const onTrip = (t,k) => (t.cars||[]).includes(k) || t.crew.some(c => c[1]===k);
   const people = MEMBERS.map(m => {
     const onFam = (t,k) => familyOf(k).some(v => onTrip(t,v)), outFam = (t,k) => familyOf(k).some(v => onTrip(t,v) && carOut(t,v));
@@ -1633,7 +1646,7 @@ function carCard(k){
       ${[pf.acc && /0–100/.test(e.note||"") ? "" : e.note, pf.note].filter(Boolean).map(t => `<p class="note">${esc(t)}</p>`).join("")}
       ${(i.mods||[]).length ? `<h3>Úpravy</h3><ul class="cc-mods">${i.mods.map(t => `<li>${esc(t)}</li>`).join("")}</ul>` : ""}
       <h3>Tripy s tímto autem</h3>
-      ${upcoming.length ? `<div class="cc-trips" style="margin-bottom:8px">${upcoming.map(t => fam.some(v => onTripV(t,v) && carOut(t,v)) ? `<button class="tag out" data-cc-next="1">Nejede: ${esc(t.name)} <span>${esc(t.when)}</span></button>` : `<button class="tag next" data-cc-next="1">Jede: ${esc(t.name)} <span>${esc(t.when)}${varOn(t)?` · ${esc(varOn(t))}`:""}</span></button>`).join("")}</div>` : ""}
+      ${upcoming.length ? `<div class="cc-trips" style="margin-bottom:8px">${upcoming.map(t => fam.some(v => onTripV(t,v) && carOut(t,v)) ? `<button class="tag out" data-cc-next="${t.id}">Nejede: ${esc(t.name)} <span>${esc(t.when)}</span></button>` : `<button class="tag next" data-cc-next="${t.id}">Jede: ${esc(t.name)} <span>${esc(t.when)}${varOn(t)?` · ${esc(varOn(t))}`:""}</span></button>`).join("")}</div>` : ""}
       ${driven.length ? `<div class="cc-trips">${driven.map(t => `<button class="tag" data-cc-trip="${t.id}">${esc(t.name)} <span class="note">${esc(t.when)}${varOn(t)?` · ${esc(varOn(t))}`:""}</span></button>`).join("")}</div>` : (upcoming.length ? "" : `<p class="note">Zatím žádný trip.</p>`)}
       ${(i.history||[]).length ? `<h3>Historie modelu</h3>${i.history.map(t => `<p>${esc(t)}</p>`).join("")}` : ""}
     </div>`;
@@ -1643,7 +1656,7 @@ function carCard(k){
   const dlg = document.getElementById("carcard");
   dlg.addEventListener("click", e => {
     const vb = e.target.closest("[data-cc-var]"); if (vb){ carCard(vb.dataset.ccVar); return; }
-    if (e.target.closest("[data-cc-next]")){ dlg.close(); go("next"); window.scrollTo(0,0); return; }
+    if (e.target.closest("[data-cc-next]")){ dlg.close(); nextId = e.target.closest("[data-cc-next]").dataset.ccNext; go("next"); window.scrollTo(0,0); return; }
     const tb = e.target.closest("[data-cc-trip]");
     if (tb){ dlg.close(); pastId = tb.dataset.ccTrip; pastTab = defTab(trip(pastId)); go("past"); window.scrollTo(0,0); return; }
     if (e.target === dlg || e.target.closest("[data-cc-close]")) dlg.close();
@@ -1854,11 +1867,12 @@ function render(){
   firstRender = false;
 }
 let firstRender = true;
-const stateHash = () => sec === "past" && pastId ? `past/${pastId}/${pastTab}` : sec;
+const stateHash = () => sec === "past" && pastId ? `past/${pastId}/${pastTab}` : sec === "next" && nextId && curNext() !== upcomingTrips()[0] ? `next/${nextId}` : sec;
 function applyHash(){
   const [s, id, tab] = (location.hash||"").slice(1).split("/");
   if (!SECTIONS[s]) return false;
   sec = s;
+  if (s === "next") nextId = id && TRIPS.some(t => t.id===id && t.status==="next") ? id : "";
   if (s === "past" && id && TRIPS.some(t => t.id===id && t.status==="done")){ pastId = id; pastTab = fixTab(trip(id), tab); }
   return true;
 }
@@ -1881,6 +1895,7 @@ view.addEventListener("click", e => {
   if (b.hasAttribute("data-cancel-edit")){ stopEditing(); return; }
   if (b.dataset.unpick){ const [p] = pickedPhotos.splice(+b.dataset.unpick, 1); if (p.file) URL.revokeObjectURL(p.url); refreshPicks(); return; }
   if (b.dataset.sphoto){ const [id,i] = b.dataset.sphoto.split(":"), st = Object.values(sharedStories).flat().find(x => x.id === +id); if (st){ lbList = st.photos.map(src => ({src, cap:st.t})); lbShow(+i); } return; }
+  if (b.dataset.nextTrip){ nextId = b.dataset.nextTrip; render(); const nb = document.querySelector(".tpick-btn"); if (nb) nb.focus({preventScroll:true}); return; }
   if (b.dataset.trip){ const fromPick = b.classList.contains("tpick-opt"); pastId = b.dataset.trip; pastTab = defTab(trip(pastId)); render(); if (fromPick){ const nb = document.querySelector(".tpick-btn"); if (nb) nb.focus({preventScroll:true}); } }
   else if (b.dataset.tab){ pastTab = b.dataset.tab; render(); if (b.classList.contains("home-day")){ const n = document.querySelector(".tabs"); if (n) n.scrollIntoView({block:"start", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"}); } }
   else if (b.dataset.goto){ pastId = b.dataset.goto; pastTab = defTab(trip(pastId)); go("past"); window.scrollTo(0,0); }
@@ -1904,7 +1919,7 @@ view.addEventListener("click", e => {
   }
   else if (b.dataset.sort){ const k = b.dataset.sort; fleetDir = k===fleetSort ? -fleetDir : FLEET_SORTS.find(x=>x[0]===k)[2]; fleetSort = k; render(); }
   else if (b.dataset.editRoute){ const f = view.querySelector(`[data-route-form="${b.dataset.editRoute}"]`); f.hidden = !f.hidden; if (!f.hidden) f.querySelector("input").focus(); }
-  else if (b.dataset.resetRoute){ const t = TRIPS.find(x => x.status==="next"); const k = b.dataset.resetRoute; store.set(routeKey(t, k==="trip"?null:+k), ""); render(); }
+  else if (b.dataset.resetRoute){ const t = curNext(); const k = b.dataset.resetRoute; store.set(routeKey(t, k==="trip"?null:+k), ""); render(); }
 });
 (() => {
   const lb = document.getElementById("lightbox");
@@ -1932,7 +1947,7 @@ view.addEventListener("submit", e => {
     e.preventDefault();
     const v = e.target.querySelector("input").value.trim();
     if (!isMapy(v)){ e.target.querySelector(".route-err").textContent = "Vlož odkaz, který začíná https://mapy.com nebo https://mapy.cz (v Mapy.cz použij Sdílet → Kopírovat odkaz)."; return; }
-    const t = TRIPS.find(x => x.status==="next"); const k = e.target.dataset.routeForm;
+    const t = curNext(); const k = e.target.dataset.routeForm;
     store.set(routeKey(t, k==="trip"?null:+k), v); render(); return;
   }
   if (e.target.id !== "compose") return;
