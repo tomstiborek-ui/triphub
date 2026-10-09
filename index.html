@@ -72,6 +72,8 @@ html{scroll-padding-top:calc(var(--top-h,80px) + 8px)}
 .hero-in{max-width:1040px;margin:0 auto;display:grid;grid-template-columns:1.4fr 1fr;gap:24px;align-items:center}
 .hero.has-img h2,.hero.has-img p,.hero.has-img .stat,.hero.has-img .label{text-shadow:0 1px 3px rgba(0,0,0,.55),0 0 14px rgba(0,0,0,.35)}
 .hero h2{font-size:clamp(28px,4.8vw,45px)}
+/* Trip titles (Tom 2026-10-09): own title, season + year as the subtitle */
+.hero .hsub{margin-top:6px;font:600 clamp(16px,2vw,20px)/1.2 var(--display);color:#E3EAF0;letter-spacing:.01em}
 .hero .label{color:#B8C5D1}
 .hero.has-img .label{color:#E2E8EE}
 .hero p{margin:10px 0 0;max-width:52ch;color:#C9D3DD}
@@ -656,6 +658,7 @@ const CARS = {
 };
 const member = n => MEMBERS.find(p => p.n === n);
 
+// name = season + year (shown as the subtitle), title = the trip's own name from Tom (2026-10-09), shown as the heading when set.
 const TRIPS = [
   {
     // Next trip (Tom 2026-10-09): spring 2027 around Jindřichův Hradec and Třeboň; crew and cars moved here from Podzim 2027 the same day.
@@ -682,7 +685,7 @@ const TRIPS = [
     days:[]
   },
   {
-    id:"podzim26", cover:"photos/podzim26-042.webp", coverPos:"center 60%", thumbPack:"photos/podzim26-thumbs.json", album:"https://photos.app.goo.gl/3g26HqBdZhkJYF298", name:"Podzim 2026", when:"2.–4. října 2026", status:"done",
+    id:"podzim26", cover:"photos/podzim26-042.webp", coverPos:"center 60%", thumbPack:"photos/podzim26-thumbs.json", album:"https://photos.app.goo.gl/3g26HqBdZhkJYF298", name:"Podzim 2026", title:"Nech sa páči", when:"2.–4. října 2026", status:"done",
     blurb:"Tři dny: v pátek z Jihlavy na Zubák, v sobotu okruh po Slovensku a Valašsku, v neděli přes Rakousko domů.",
     cars:["boxster987","saab95aero","mx5na16","mx5nc20"], km:920, // 312 + 265 (lehká sobota) + 343
     crew:[["Tom Stiborek","boxster987","in"],["Petr Ježek","saab95aero","in"],["Jan Verner","mx5nc20","in"],["Jindřich Šikl","mx5na16","in"]], stages:[], stories:[],
@@ -837,7 +840,7 @@ const TRIPS = [
     stories:[]
   },
   {
-    id:"jaro20", cover:"photos/jaro20-004.webp", coverPos:"center 80%", thumbPack:"photos/jaro20-thumbs.json", name:"Jaro 2020", when:"12.–13. června 2020", status:"done", days:2,
+    id:"jaro20", cover:"photos/jaro20-004.webp", coverPos:"center 80%", thumbPack:"photos/jaro20-thumbs.json", name:"Jaro 2020", title:"Naše poprvé", when:"12.–13. června 2020", status:"done", days:2,
     codrivers:["Jiří Tyc","Matěj Pospíchal","Jan Procházka"], // Tom 2026-10-05: spolujezdci podle Tomova seznamu (Honza = Jan Procházka).
     blurb:"Dva dny: zastávky u silnice, kontroly pod kapotou a večerní tábor se stany na louce při západu slunce.",
     crew:[],
@@ -864,7 +867,7 @@ function hero(t, stats, picker=""){
   return `<section class="hero${img}>${picker}
     <div class="hero-in"><div>
       <span class="label">${t.status==="done"?"":"Chystáme · "}${esc(t.when)}</span>
-      <h2>${esc(t.name)}</h2>
+      <h2>${esc(t.title||t.name)}</h2>${t.title?`<div class="hsub">${esc(t.name)}</div>`:""}
       <p>${esc(t.blurb)}</p>
     </div>
     <div class="stats">${stats.map(([k,v,u,cls]) => `<div class="stat"><div class="label">${k}</div>
@@ -1507,9 +1510,9 @@ const tripYear = t => +((t.when.match(/(19|20)\d\d/g) || [""]).pop()) || 0;
 function tripPicker(past, t, attr = "trip"){
   const years = [...new Set(past.map(tripYear))].sort((a,b) => b - a);
   return `<div class="tpick">
-    <button type="button" class="tpick-btn" data-tpick aria-haspopup="true" aria-expanded="false" aria-controls="tpick-list"><span class="label">Trip</span><span class="tpick-cur">${esc(t.name)}</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+    <button type="button" class="tpick-btn" data-tpick aria-haspopup="true" aria-expanded="false" aria-controls="tpick-list"><span class="label">Trip</span><span class="tpick-cur">${esc(t.title||t.name)}</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
     <div class="tpick-list" id="tpick-list" hidden>${years.map(y => `<div class="tpick-year" role="group" aria-label="${y}"><span class="label">${y}</span>${past.filter(p => tripYear(p)===y).map(p =>
-      `<button type="button" class="tpick-opt" data-${attr}="${p.id}"${p.id===t.id?` aria-current="true"`:""}><strong>${esc(p.name)}</strong><span>${esc(p.when)}</span></button>`).join("")}</div>`).join("")}</div>
+      `<button type="button" class="tpick-opt" data-${attr}="${p.id}"${p.id===t.id?` aria-current="true"`:""}><strong>${esc(p.title||p.name)}</strong><span>${p.title?`${esc(p.name)} · `:""}${esc(p.when)}</span></button>`).join("")}</div>`).join("")}</div>
   </div>`;
 }
 function tpickOpen(open, focus){
