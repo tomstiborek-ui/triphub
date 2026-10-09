@@ -658,26 +658,26 @@ const member = n => MEMBERS.find(p => p.n === n);
 
 const TRIPS = [
   {
-    // Next trip (Tom 2026-10-09): spring 2027 around Jindřichův Hradec and Třeboň; nothing else known yet.
-    // Mucha-style cover (Tom 2026-10-09), drawn by trips/tools/mk_jaro27_mucha.js. storeId keeps its browser data apart from Podzim 2027's.
-    id:"jaro27", storeId:"jaro27-jh", name:"Jaro 2027", when:"jaro 2027 · termín upřesníme", status:"next",
+    // Next trip (Tom 2026-10-09): spring 2027 around Jindřichův Hradec and Třeboň; crew and cars moved here from Podzim 2027 the same day.
+    // Mucha-style cover (Tom 2026-10-09), drawn by trips/tools/mk_jaro27_mucha.js. NA = Jindřich's 1.6, second NB = Jára's (Tom 2026-10-05).
+    id:"jaro27", name:"Jaro 2027", when:"jaro 2027 · termín upřesníme", status:"next",
     cover:"photos/jaro27-mucha.jpg", coverPos:"center top",
-    blurb:"Okolí Jindřichova Hradce a Třeboně: zámek, rybníky a hráze s duby. Termín, posádku i trasy teprve plánujeme.",
-    cars:[], km:0, crew:[], codrivers:[], photos:[], stages:[], stories:[],
+    blurb:"Okolí Jindřichova Hradce a Třeboně: zámek, rybníky a hráze s duby. Čekáme 6–7 aut: Porsche 944 S2, Porsche Cayman, MX-5 NC, dvakrát MX-5 NB, Legacy Turbo a nejspíš i Alfa 146. Termín, sraz i trasy teprve plánujeme.",
+    // Crew and cars moved here from Podzim 2027 (Tom 2026-10-09); as listed by Tom 2026-10-05/06.
+    carsExpected:"6–7", // Tom 2026-10-05: Petr will probably bring the Alfa 146. Tom 2026-10-06: Jindra comes in his new Cayman instead of the NA.
+    cars:["p944_s2cs","mx5nc20","cayman_jindra","mx5nb18","mx5nb_jo","legacy1_20t","alfa146_ts"], km:0,
+    crew:[["Tom Stiborek","p944_s2cs","in"],["Jan Verner","mx5nc20","in"],["Jindřich Šikl","cayman_jindra","in"],["Jan Procházka","mx5nb18","in"],["Jára Obdržálek","mx5nb_jo","in"],["Otakar Doležal","legacy1_20t","in"],["Petr Ježek","alfa146_ts","in"]],
+    codrivers:["Jiří Tyc","Matěj Pospíchal","Richard Stránský","Matěj Tyc","Filip Doležal"], photos:[], stages:[], stories:[],
     checks:[{g:"Základ", items:["Karimatka","Spacák","Nabíječky","Moka konvice","Mlýnek na kafe","Kafe","Přenosný vařič","Vysílačka","Olej","Židličky"]}],
     days:[]
   },
   {
     // Upcoming trip planned as "Jaro 2027" (Tom 2026-10-05), moved to autumn 2027 (Tom 2026-10-09): Jeseníky and the Czech–Polish border.
-    // NA = Jindřich's 1.6, second NB = Jára's (Tom 2026-10-05). storeId:"jaro27" keeps checklist ticks and route links saved under the old id.
-    id:"podzim27", storeId:"jaro27", name:"Podzim 2027", when:"podzim 2027 · termín upřesníme", status:"next",
+    id:"podzim27", name:"Podzim 2027", when:"podzim 2027 · termín upřesníme", status:"next",
     cover:"photos/jaro27-picasso.jpg", coverPos:"center top", // Picasso-style cover, Tom 2026-10-06 (trips/tools/mk_jaro27_picasso.js); Warhol version: photos/jaro27-warhol.jpg
-    blurb:"Jeseníky a hory na česko-polské hranici. Čekáme 6–7 aut: Porsche 944 S2, Porsche Cayman, MX-5 NC, dvakrát MX-5 NB, Legacy Turbo a nejspíš i Alfa 146. Termín, sraz i trasy teprve plánujeme.",
-    carsExpected:"6–7", // Tom 2026-10-05: Petr will probably bring the Alfa 146. Tom 2026-10-06: Jindra comes in his new Cayman instead of the NA.
-    cars:["p944_s2cs","mx5nc20","cayman_jindra","mx5nb18","mx5nb_jo","legacy1_20t","alfa146_ts"], km:0,
-    // Tom 2026-10-05: list everybody from the group so far. Car null = driver whose car isn't known yet.
-    crew:[["Tom Stiborek","p944_s2cs","in"],["Jan Verner","mx5nc20","in"],["Jindřich Šikl","cayman_jindra","in"],["Jan Procházka","mx5nb18","in"],["Jára Obdržálek","mx5nb_jo","in"],["Otakar Doležal","legacy1_20t","in"],["Petr Ježek","alfa146_ts","in"]],
-    codrivers:["Jiří Tyc","Matěj Pospíchal","Richard Stránský","Matěj Tyc","Filip Doležal"], photos:[], stages:[], stories:[],
+    blurb:"Jeseníky a hory na česko-polské hranici. Termín, posádku, auta i trasy teprve plánujeme.",
+    cars:[], km:0, // Tom 2026-10-09: crew and cars moved to Jaro 2027; empty for now.
+    crew:[], codrivers:[], photos:[], stages:[], stories:[],
     checks:[{g:"Základ", items:["Karimatka","Spacák","Nabíječky","Moka konvice","Mlýnek na kafe","Kafe","Přenosný vařič","Vysílačka","Olej","Židličky"]}],
     days:[]
   },
