@@ -1510,9 +1510,9 @@ const tripYear = t => +((t.when.match(/(19|20)\d\d/g) || [""]).pop()) || 0;
 function tripPicker(past, t, attr = "trip"){
   const years = [...new Set(past.map(tripYear))].sort((a,b) => b - a);
   return `<div class="tpick">
-    <button type="button" class="tpick-btn" data-tpick aria-haspopup="true" aria-expanded="false" aria-controls="tpick-list"><span class="label">Trip</span><span class="tpick-cur">${esc(t.title||t.name)}</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+    <button type="button" class="tpick-btn" data-tpick aria-haspopup="true" aria-expanded="false" aria-controls="tpick-list"><span class="label">Trip</span><span class="tpick-cur">${esc(t.name)}</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
     <div class="tpick-list" id="tpick-list" hidden>${years.map(y => `<div class="tpick-year" role="group" aria-label="${y}"><span class="label">${y}</span>${past.filter(p => tripYear(p)===y).map(p =>
-      `<button type="button" class="tpick-opt" data-${attr}="${p.id}"${p.id===t.id?` aria-current="true"`:""}><strong>${esc(p.title||p.name)}</strong><span>${p.title?`${esc(p.name)} · `:""}${esc(p.when)}</span></button>`).join("")}</div>`).join("")}</div>
+      `<button type="button" class="tpick-opt" data-${attr}="${p.id}"${p.id===t.id?` aria-current="true"`:""}><strong>${esc(p.name)}</strong><span>${esc(p.when)}</span></button>`).join("")}</div>`).join("")}</div>
   </div>`;
 }
 function tpickOpen(open, focus){
