@@ -524,6 +524,7 @@ button.tag::after{content:"";position:absolute;inset:-12px -3px}
 .place.sel{box-shadow:inset 0 0 0 2px var(--accent),var(--card-shadow)}
 .place-pic{position:relative;width:72px;height:72px;border-radius:8px;overflow:hidden;background:color-mix(in srgb,var(--c) 14%,var(--surface));display:flex;align-items:center;justify-content:center;color:var(--i,var(--c))}
 .place-pic img{width:100%;height:100%;object-fit:cover}
+button.place-pic{border:0;padding:0;cursor:zoom-in}
 /* Dark mode: lighter icon and stronger tile tint so brown/blue icons stay readable. */
 :root[data-theme="dark"] .place-pic{color:color-mix(in srgb,var(--c) 55%,#fff);background:color-mix(in srgb,var(--c) 28%,var(--surface))}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .place-pic{color:color-mix(in srgb,var(--c) 55%,#fff);background:color-mix(in srgb,var(--c) 28%,var(--surface))}}
@@ -1700,7 +1701,7 @@ const PLACES = [
   {id:"snyt-primka", n:"ŠNYT Primka", cat:"restaurace", lat:49.726096, lon:17.2923487}, // Tom 2026-10-08, coordinates from his link
   {id:"muzeum-soc-vozu", n:"Muzeum socialistických vozů", cat:"muzeum", lat:50.6403094, lon:15.2474462}, // Tom 2026-10-13, new category Muzea; coordinates from his link
   {id:"burger-brothers-u-kona", n:"Burger Brothers U Koňa", cat:"restaurace", lat:49.096157, lon:17.7465245}, // Tom 2026-10-13, coordinates from his link
-  {id:"jiriho-chill", n:"Jiřího chill", cat:"vyhlidka", lat:49.108134, lon:17.798723} // Tom 2026-10-13, his own name for a dropped pin
+  {id:"jiriho-chill", n:"Jiřího chill", cat:"vyhlidka", lat:49.108134, lon:17.798723, img:"places/jirihochill-wide.webp", full:"places/jirihochill.webp"} // Tom 2026-10-13, his own name for a dropped pin; photo from his album
 ];
 // Line icons shown on a card when the place has no photo (img).
 const PLACE_ICON = {
@@ -1732,7 +1733,7 @@ function viewPlaces(){
     </div>
     ${list.length ? `<div class="places">${list.map((p,i) => `
       <article class="place${placeSel===p.id?" sel":""}" id="place-${p.id}">
-        <div class="place-pic" style="--c:${placeCat_(p).c};--i:${placeCat_(p).i||placeCat_(p).c}">${p.img ? `<img src="${esc(p.img)}" alt="" loading="lazy">` : `<svg viewBox="0 0 24 24" aria-hidden="true">${PLACE_ICON[p.cat] || PLACE_ICON.jine}</svg>`}</div>
+        ${p.img ? `<button type="button" class="place-pic" data-pphoto="${p.id}" aria-label="Fotka: ${esc(p.n)}" style="--c:${placeCat_(p).c}"><img src="${esc(p.img)}" alt="" loading="lazy"></button>` : `<div class="place-pic" style="--c:${placeCat_(p).c};--i:${placeCat_(p).i||placeCat_(p).c}"><svg viewBox="0 0 24 24" aria-hidden="true">${PLACE_ICON[p.cat] || PLACE_ICON.jine}</svg></div>`}
         <div class="place-body">
           <h4>${esc(p.n)}</h4>
           <div class="place-meta"><span class="label">${placeCat_(p).l}</span></div>
@@ -1908,6 +1909,7 @@ view.addEventListener("click", e => {
   else if (b.dataset.goto){ pastId = b.dataset.goto; pastTab = defTab(trip(pastId)); go("past"); window.scrollTo(0,0); }
   else if (b.dataset.photo){ lbShow(+b.dataset.photo); }
   else if (b.dataset.dphoto){ const [tid,dd,i] = b.dataset.dphoto.split(":"), t = trip(tid); lbList = t.photos.filter(p => p.day === +dd); lbShow(+i); }
+  else if (b.dataset.pphoto){ const p = PLACES.find(x => x.id === b.dataset.pphoto); lbList = [{src:p.full||p.img, cap:p.n}]; lbShow(0); }
   else if (b.dataset.daymap){ lbList = [{src:b.dataset.daymap, cap:"Mapa trasy"}]; lbShow(0); }
   else if (b.dataset.car){ carCard(b.dataset.car); }
   else if (b.dataset.row){
