@@ -475,6 +475,8 @@ html.guest #compose,html.guest .story-del{display:none!important}
 .sections{gap:8px}
 .top{padding-block:20px 18px}.top-nav{padding:0}
 @media (max-width:640px){.top-nav{flex:1 1 100%;flex-wrap:nowrap;gap:6px}.top-nav .sec{flex:1 1 auto;border-radius:12px;padding:6px 8px;letter-spacing:.04em;line-height:1.2;white-space:normal;text-align:center}}
+/* Six sections since Sypačky (Tom 2026-10-14): on phones the menu is a 3 × 2 grid of one-line buttons. */
+@media (max-width:640px){.top-nav{display:grid;grid-template-columns:repeat(3,1fr)}.top-nav .sec{min-height:36px;padding:6px 4px;white-space:nowrap;letter-spacing:.03em}}
 .route-link,.linkish,.gcar .model{display:inline-flex;align-items:center;min-height:44px}
 .meet-card dd a{display:inline-flex;align-items:center;min-height:44px;margin-block:-12px}
 /* Compact trip badges; the invisible ::after keeps a ~44px tap area. */
@@ -524,6 +526,23 @@ button.tag::after{content:"";position:absolute;inset:-12px -3px}
 .place.sel{box-shadow:inset 0 0 0 2px var(--accent),var(--card-shadow)}
 .place-pic{position:relative;width:72px;height:72px;border-radius:8px;overflow:hidden;background:color-mix(in srgb,var(--c) 14%,var(--surface));display:flex;align-items:center;justify-content:center;color:var(--i,var(--c))}
 .place-pic img{width:100%;height:100%;object-fit:cover}
+/* Sypačky */
+.road-pic{background:color-mix(in srgb,var(--c) 10%,var(--surface))}.place-pic svg.road-thumb{width:100%;height:100%;stroke:none}
+#rmap + .empty{margin-top:12px}
+.cc-text .profile{max-width:440px;margin:4px 0 8px}
+.road.sel{box-shadow:0 0 0 2px var(--c),var(--card-shadow)}
+.road-name{font:inherit;font-weight:700;text-align:left;padding:0;border:0;background:none;color:inherit;cursor:pointer}
+@media (hover:hover){.road-name:hover{text-decoration:underline}}
+.rmap-svg{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
+.rline{pointer-events:auto;cursor:pointer}
+.rline path{fill:none;stroke-linecap:round;stroke-linejoin:round}
+.rline .rhit{stroke:transparent;stroke-width:18}
+.rline .rcase{stroke:#fff;stroke-width:8;opacity:.9}
+.rline .rstroke{stroke-width:4.5}
+.rline.sel .rcase{stroke-width:11}.rline.sel .rstroke{stroke-width:7}
+@media (hover:hover){.rline:hover .rstroke{stroke-width:6.5}}
+.road-map .daymap{display:block;width:100%;height:auto}
+.road-actions{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 4px}.road-actions a{text-decoration:none}
 button.place-pic{border:0;padding:0;cursor:zoom-in}
 /* Dark mode: lighter icon and stronger tile tint so brown/blue icons stay readable. */
 :root[data-theme="dark"] .place-pic{color:color-mix(in srgb,var(--c) 55%,#fff);background:color-mix(in srgb,var(--c) 28%,var(--surface))}
@@ -568,6 +587,7 @@ button.place-pic{border:0;padding:0;cursor:zoom-in}
       <button class="sec" role="tab" id="sec-members" data-sec="members">Lidé</button>
       <button class="sec" role="tab" id="sec-cars" data-sec="cars">Auta</button>
       <button class="sec" role="tab" id="sec-places" data-sec="places">Místa</button>
+      <button class="sec" role="tab" id="sec-roads" data-sec="roads">Sypačky</button>
     </nav>
     <button type="button" class="logout" id="logout" aria-label="Odhlásit" title="Odhlásit"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg></button>
   </header>
@@ -884,6 +904,7 @@ const HERO_POOL = {
   cars:["jaro20-019","jaro21-002","jaro22-016","jaro22-046","jaro24-004","jaro24-032","jaro25e-008","jaro25e-028","jaro26-01","jaro26-29","podzim23-010","podzim24-007","podzim25-096","podzim26-002","podzim26-039","podzim26-045"],
   places:["jaro20-031","jaro20-035","jaro21-015","jaro26-15","podzim23-017","podzim23-019","podzim23-021","podzim25-013","podzim26-011"]
 };
+HERO_POOL.roads = HERO_POOL.cars; // Sypačky: cars on the road
 const SEC_HERO_IMG = Object.fromEntries(Object.entries(HERO_POOL).map(([k,a]) => [k, `photos/${a[Math.floor(Math.random()*a.length)]}.webp`]));
 function secHero(key, title, blurb, stats){
   return `<section class="hero has-img sec-hero" style="--hero-img:url('${SEC_HERO_IMG[key]}')">
@@ -1660,6 +1681,7 @@ function carCard(k){
   const dlg = document.getElementById("carcard");
   dlg.addEventListener("click", e => {
     const vb = e.target.closest("[data-cc-var]"); if (vb){ carCard(vb.dataset.ccVar); return; }
+    const rs = e.target.closest("[data-rshow]"); if (rs){ showRoad(rs.dataset.rshow); return; }
     if (e.target.closest("[data-cc-next]")){ dlg.close(); nextId = e.target.closest("[data-cc-next]").dataset.ccNext; go("next"); window.scrollTo(0,0); return; }
     const tb = e.target.closest("[data-cc-trip]");
     if (tb){ dlg.close(); pastId = tb.dataset.ccTrip; pastTab = defTab(trip(pastId)); go("past"); window.scrollTo(0,0); return; }
@@ -1748,7 +1770,6 @@ function viewPlaces(){
         </div>
       </article>`).join("")}</div>` : `<div class="empty">Zatím žádná místa. Pošli Claudovi název a odkaz z Mapy.cz nebo Google Map a místo se tu objeví.</div>`}`;
 }
-// Small slippy map: integer zoom levels, drag to pan, double-click / pinch / buttons to zoom.
 // Addresses: a stored p.addr wins; otherwise the visitor's browser asks OpenStreetMap Nominatim once per place
 // (reverse geocode, one request per second) and keeps the answer in localStorage. Google and Nominatim are blocked
 // from the cloud session that edits this page, so addresses can't be baked in (Tom asked for them 2026-10-06).
@@ -1777,22 +1798,21 @@ function fillPlaceAddrs(){
     addrQueue = null;
   })();
 }
-function initPlacesMap(){
-  const el = document.getElementById("pmap"); if (!el) return;
-  fillPlaceAddrs();
+// Small slippy map engine shared by Místa and Sypačky: integer zoom levels, drag to pan, double-click / pinch / buttons to zoom.
+// o.pts = [[lon,lat],…] to fit when there is no saved view, o.view = saved view (kept across renders), o.layer(x0,y0,z,wx,wy) = overlay HTML.
+function slippyMap(el, o){
   const T = 256, tilesEl = el.querySelector(".pmap-tiles"), pinsEl = el.querySelector(".pmap-pins");
   const wx = (lon,z) => (lon + 180) / 360 * T * 2**z;
   const wy = (lat,z) => { const s = Math.sin(lat * Math.PI / 180); return (0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)) * T * 2**z; };
-  const list = shownPlaces();
   let W = el.clientWidth, H = el.clientHeight, v;
-  if (pmapView) v = pmapView;
-  else if (!list.length) v = {z:7, cx:wx(15.5,7), cy:wy(49.8,7)};
-  else {
-    const lo = Math.min(...list.map(p => p.lon)), hi = Math.max(...list.map(p => p.lon)), la = Math.min(...list.map(p => p.lat)), lb = Math.max(...list.map(p => p.lat));
-    let z = 14; while (z > 3 && (wx(hi,z) - wx(lo,z) > W - 80 || wy(la,z) - wy(lb,z) > H - 120)) z--;
-    v = {z, cx:(wx(lo,z) + wx(hi,z)) / 2, cy:(wy(la,z) + wy(lb,z)) / 2 - 15}; // pins stand above their point, so shift the view up a little
-  }
-  pmapView = v;
+  const fit = pts => {
+    const lo = Math.min(...pts.map(p => p[0])), hi = Math.max(...pts.map(p => p[0])), la = Math.min(...pts.map(p => p[1])), lb = Math.max(...pts.map(p => p[1]));
+    let z = o.maxFit || 14; while (z > 3 && (wx(hi,z) - wx(lo,z) > W - (o.padX || 80) || wy(la,z) - wy(lb,z) > H - (o.padY || 120))) z--;
+    return {z, cx:(wx(lo,z) + wx(hi,z)) / 2, cy:(wy(la,z) + wy(lb,z)) / 2 + (o.shiftY || 0)};
+  };
+  if (o.view) v = o.view;
+  else if (!o.pts.length) v = {z:7, cx:wx(15.5,7), cy:wy(49.8,7)};
+  else v = fit(o.pts);
   const imgs = new Map();
   function draw(scale = 1, ox = 0, oy = 0){
     W = el.clientWidth; H = el.clientHeight;
@@ -1806,13 +1826,12 @@ function initPlacesMap(){
       }
     for (const [id, im] of imgs) if (!keep.has(id)){ im.remove(); imgs.delete(id); }
     tilesEl.style.transform = pinsEl.style.transform = scale === 1 && !ox && !oy ? "" : `translate(${ox}px,${oy}px) scale(${scale})`;
-    pinsEl.innerHTML = list.map((p,i) => `<button type="button" class="ppin${placeSel===p.id?" sel":""}" data-ppin="${p.id}" style="left:${wx(p.lon,v.z) - x0}px;top:${wy(p.lat,v.z) - y0}px;--c:${placeCat_(p).c};--t:${placeCat_(p).t||"#fff"}" aria-label="${esc(p.n)}"><span><svg viewBox="0 0 24 24" aria-hidden="true">${PLACE_ICON[p.cat] || PLACE_ICON.jine}</svg></span></button>`).join("");
+    pinsEl.innerHTML = o.layer(x0, y0, v.z, wx, wy, W, H);
   }
   function zoomAt(dz, px = W/2, py = H/2){
     const z = Math.max(3, Math.min(18, v.z + dz)); if (z === v.z) return;
     const k = 2**(z - v.z); v.cx = (v.cx - W/2 + px) * k - px + W/2; v.cy = (v.cy - H/2 + py) * k - py + H/2; v.z = z; draw();
   }
-  el._show = id => { const p = PLACES.find(q => q.id === id); if (!p) return; v.z = Math.max(v.z, 15); v.cx = wx(p.lon, v.z); v.cy = wy(p.lat, v.z); draw(); };
   const pts = new Map(); let start = null, moved = false;
   el.addEventListener("pointerdown", e => {
     if (e.target.closest("button,a")) return;
@@ -1838,19 +1857,120 @@ function initPlacesMap(){
   };
   el.addEventListener("pointerup", end); el.addEventListener("pointercancel", end);
   // No wheel zoom (Tom 2026-10-05): scrolling the page over the map must not zoom it; use +/−, double-click or pinch.
-  el.addEventListener("dblclick", e => { if (e.target.closest("button,a")) return; const r = el.getBoundingClientRect(); zoomAt(1, e.clientX - r.left, e.clientY - r.top); });
+  el.addEventListener("dblclick", e => { if (e.target.closest("button,a,[data-road]")) return; const r = el.getBoundingClientRect(); zoomAt(1, e.clientX - r.left, e.clientY - r.top); });
+  el.addEventListener("click", e => { const z = e.target.closest("[data-pzoom]"); if (z) zoomAt(+z.dataset.pzoom); });
+  if (el._ro) el._ro.disconnect(); el._ro = new ResizeObserver(() => draw()); el._ro.observe(el);
+  draw();
+  return {v, draw, wx, wy, moved:() => moved, fitTo(p){ Object.assign(v, fit(p)); draw(); }};
+}
+function initPlacesMap(){
+  const el = document.getElementById("pmap"); if (!el) return;
+  fillPlaceAddrs();
+  const list = shownPlaces();
+  const m = slippyMap(el, {pts:list.map(p => [p.lon, p.lat]), view:pmapView, shiftY:-15, // pins stand above their point, so shift the view up a little
+    layer:(x0, y0, z, wx, wy) => list.map(p => `<button type="button" class="ppin${placeSel===p.id?" sel":""}" data-ppin="${p.id}" style="left:${wx(p.lon,z) - x0}px;top:${wy(p.lat,z) - y0}px;--c:${placeCat_(p).c};--t:${placeCat_(p).t||"#fff"}" aria-label="${esc(p.n)}"><span><svg viewBox="0 0 24 24" aria-hidden="true">${PLACE_ICON[p.cat] || PLACE_ICON.jine}</svg></span></button>`).join("")});
+  pmapView = m.v;
+  el._show = id => { const p = PLACES.find(q => q.id === id); if (!p) return; m.v.z = Math.max(m.v.z, 15); m.v.cx = m.wx(p.lon, m.v.z); m.v.cy = m.wy(p.lat, m.v.z); m.draw(); };
   el.addEventListener("click", e => {
-    const z = e.target.closest("[data-pzoom]"); if (z){ zoomAt(+z.dataset.pzoom); return; }
-    const pin = e.target.closest("[data-ppin]"); if (!pin || moved) return;
-    placeSel = pin.dataset.ppin; draw();
+    const pin = e.target.closest("[data-ppin]"); if (!pin || m.moved()) return;
+    placeSel = pin.dataset.ppin; m.draw();
     document.querySelectorAll(".place").forEach(c => c.classList.toggle("sel", c.id === "place-" + placeSel));
     const card = document.getElementById("place-" + placeSel); if (card) card.scrollIntoView({block:"nearest", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"});
   });
-  if (el._ro) el._ro.disconnect(); el._ro = new ResizeObserver(() => draw()); el._ro.observe(el);
-  draw();
 }
 
-const SECTIONS = {next:viewNext, past:viewPast, members:() => viewMembers("people"), cars:() => viewMembers("cars"), places:viewPlaces};
+/* ---------- Sypačky (Tom 2026-10-14): the best driving roads we found ---------- */
+// One entry per road, built from Tom's GPX with trips/tools/mk_road.js (GPX kept in /mnt/project-files/roads/).
+// n = name, region = area, from/to = start and end, km/climb/min/max/prof = from the GPX, line = simplified [lon,lat],
+// img = card photo, full = photo opened full size, trips = trip ids it was driven on, note = a sentence about it, mapy = Mapy.cz link.
+const ROADS = [];
+const ROAD_COLORS = ["#D9480F","#1E6FD9","#16A34A","#7C3AED","#DB2777","#0F766E","#B45309","#4338CA"];
+const roadColor = r => ROAD_COLORS[ROADS.indexOf(r) % ROAD_COLORS.length];
+const road = id => ROADS.find(r => r.id === id);
+let roadSel = null, rmapView = null;
+const ROAD_ICON = '<path d="M8 3L4 21M16 3l4 18M12 4v3M12 11v3M12 18v3"/>';
+const roadNav = r => ({mapy:`https://mapy.com/fnc/v1/route?end=${r.line[0][0]},${r.line[0][1]}&routeType=car_fast`, google:`https://www.google.com/maps/dir/?api=1&travelmode=driving&destination=${r.line[0][1]},${r.line[0][0]}`});
+function viewSypacky(){
+  const km = Math.round(ROADS.reduce((a,r) => a + (r.km||0), 0));
+  return `
+    ${secHero("roads", "Sypačky", "Nejlepší silnice, které jsme na tripech našli. Klikni na silnici na mapě nebo v seznamu.", [["Silnice", ROADS.length], ["Kilometrů", km ? fmt(km) : "–"]])}
+    <div class="pmap" id="rmap" role="region" aria-label="Mapa sypaček">
+      <div class="pmap-tiles"></div><div class="pmap-pins"></div>
+      <div class="pmap-zoom"><button type="button" data-pzoom="1" aria-label="Přiblížit">+</button><button type="button" data-pzoom="-1" aria-label="Oddálit">−</button></div>
+      <div class="pmap-attr">© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a></div>
+    </div>
+    ${ROADS.length ? `<div class="places roads">${ROADS.map(r => `
+      <article class="place road${roadSel===r.id?" sel":""}" id="road-${r.id}" style="--c:${roadColor(r)}">
+        <button type="button" class="place-pic road-pic" data-road="${r.id}" aria-label="Detail: ${esc(r.n)}">${r.img ? `<img src="${esc(r.img)}" alt="" loading="lazy">` : roadThumb(r)}</button>
+        <div class="place-body">
+          <h4><button type="button" class="road-name" data-road="${r.id}">${esc(r.n)}</button></h4>
+          <div class="place-meta"><span class="label">${esc(r.region || "Sypačka")}</span></div>
+          <div class="place-addr">${[r.km ? `${fmt(r.km)} km` : "", r.climb ? `≈${fmt(r.climb)} m stoupání` : ""].filter(Boolean).join(" · ")}</div>
+          <div class="place-actions">
+            <button class="ibtn primary" type="button" data-road="${r.id}" title="Detail silnice" aria-label="Detail silnice"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg></button>
+            <a class="ibtn" href="${roadNav(r).mapy}" target="_blank" rel="noopener" title="Navigovat na začátek (Mapy.cz)" aria-label="Navigovat na začátek v Mapy.cz"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l18-8-8 18-2-8z"/></svg></a>
+            <button class="ibtn" type="button" data-rshow="${r.id}" title="Ukázat na mapě" aria-label="Ukázat na mapě"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
+          </div>
+        </div>
+      </article>`).join("")}</div>` : `<div class="empty">Zatím žádné sypačky. Pošli Claudovi GPX silnice (z Mapy.cz: Uložit / Exportovat GPX), její název a fotku a objeví se tady na mapě.</div>`}`;
+}
+// Small line drawing of a road for cards without a photo.
+function roadThumb(r){
+  const k = Math.cos(r.line[0][1] * Math.PI / 180), xs = r.line.map(p => p[0] * k), ys = r.line.map(p => p[1]);
+  const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys), s = 56 / Math.max(x1 - x0, y1 - y0, 1e-6);
+  const ox = (72 - (x1 - x0) * s) / 2, oy = (72 - (y1 - y0) * s) / 2;
+  const d = r.line.map((p,i) => `${i?"L":"M"}${(ox + (p[0]*k - x0) * s).toFixed(1)},${(72 - oy - (p[1] - y0) * s).toFixed(1)}`).join("");
+  return `<svg viewBox="0 0 72 72" class="road-thumb" aria-hidden="true"><path d="${d}" fill="none" stroke="${roadColor(r)}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+}
+function initRoadsMap(){
+  const el = document.getElementById("rmap"); if (!el) return;
+  const m = slippyMap(el, {pts:ROADS.flatMap(r => r.line), view:rmapView, padX:60, padY:60,
+    layer:(x0, y0, z, wx, wy, W, H) => {
+      const path = r => r.line.map((p,i) => `${i?"L":"M"}${(wx(p[0],z) - x0).toFixed(1)},${(wy(p[1],z) - y0).toFixed(1)}`).join("");
+      const order = [...ROADS].sort((a,b) => (a.id===roadSel) - (b.id===roadSel)); // selected road on top
+      return `<svg class="rmap-svg" width="${W}" height="${H}">${order.map(r => { const sel = r.id === roadSel, d = path(r), [sx,sy] = [wx(r.line[0][0],z) - x0, wy(r.line[0][1],z) - y0];
+        return `<g class="rline${sel?" sel":""}" data-road="${r.id}" role="button" aria-label="${esc(r.n)}"><path d="${d}" class="rhit"/><path d="${d}" class="rcase"/><path d="${d}" class="rstroke" stroke="${roadColor(r)}"/><circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${sel?7:5.5}" fill="${roadColor(r)}" stroke="#fff" stroke-width="2"/></g>`; }).join("")}</svg>`;
+    }});
+  rmapView = m.v;
+  el._show = id => { const r = road(id); if (r){ roadSel = id; m.fitTo(r.line); } };
+  // The map captures the pointer for panning, so the click lands on the map itself: remember which road was pressed.
+  let down = null;
+  el.addEventListener("pointerdown", e => { const g = e.target.closest("[data-road]"); down = g ? g.dataset.road : null; });
+  el.addEventListener("click", e => { if (!down || m.moved() || e.target.closest("button,a")) return; roadSel = down; down = null; m.draw(); roadCard(roadSel); });
+}
+function roadCard(id){
+  const r = road(id); if (!r) return;
+  const nav = roadNav(r), trips = (r.trips||[]).map(trip).filter(Boolean);
+  const specs = [["Délka", r.km ? `${fmt(r.km)} km` : ""], ["Stoupání", r.climb ? `≈${fmt(r.climb)} m` : ""], ["Nejvýš", r.max ? `${fmt(r.max)} m n. m.` : ""], ["Nejníž", r.min ? `${fmt(r.min)} m n. m.` : ""], ["Oblast", r.region], ["Začátek", r.from], ["Konec", r.to]];
+  const dlg = document.getElementById("carcard");
+  dlg.querySelector(".cc-body").innerHTML = `
+    ${r.img ? `<img class="cc-photo" src="${esc(r.full || r.img)}" alt="${esc(r.n)}">` : `<div class="road-map">${routeSVG([{line:r.line, color:roadColor(r), mark:1}], "Mapa: " + r.n)}</div>`}
+    <div class="cc-text">
+      <span class="label">Sypačka</span>
+      <h2>${esc(r.n)}</h2>
+      <dl class="cc-specs">${specs.filter(x => x[1]).map(([l,v]) => `<div><dt>${l}</dt><dd>${esc(String(v))}</dd></div>`).join("")}</dl>
+      ${r.note ? `<p>${esc(r.note)}</p>` : ""}
+      ${r.prof ? `<div class="profile">${profileSVG(r.prof, roadColor(r))}<div class="cap"><span class="label">Výškový profil</span></div></div>` : ""}
+      <div class="road-actions">
+        <a class="btn" href="${nav.mapy}" target="_blank" rel="noopener">Navigovat na začátek</a>
+        <a class="btn ghost" href="${nav.google}" target="_blank" rel="noopener">Google Mapy</a>
+        ${r.mapy ? `<a class="btn ghost" href="${esc(r.mapy)}" target="_blank" rel="noopener">Trasa v Mapy.cz</a>` : ""}
+        <button class="btn ghost" type="button" data-rshow="${r.id}">Ukázat na mapě</button>
+      </div>
+      ${trips.length ? `<h3>Jeli jsme ji na tripech</h3><div class="cc-trips">${trips.map(t => `<button class="tag" data-cc-trip="${t.id}">${esc(t.name)} <span class="note">${esc(t.when)}</span></button>`).join("")}</div>` : ""}
+    </div>`;
+  if (!dlg.open) dlg.showModal(); dlg.scrollTop = 0;
+}
+function showRoad(id){
+  const dlg = document.getElementById("carcard"); if (dlg.open) dlg.close();
+  if (sec !== "roads"){ roadSel = id; rmapView = null; go("roads"); }
+  const el = document.getElementById("rmap"); if (!el) return;
+  el._show(id);
+  document.querySelectorAll(".road").forEach(c => c.classList.toggle("sel", c.id === "road-" + id));
+  el.scrollIntoView({block:"center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"});
+}
+
+const SECTIONS = {next:viewNext, past:viewPast, members:() => viewMembers("people"), cars:() => viewMembers("cars"), places:viewPlaces, roads:viewSypacky};
 // Tom 2026-10-06: the hero photo runs up behind the top menu; --top-h is the header's height.
 function heroUnderTop(){
   const v = document.getElementById("view"), f = v.firstElementChild, on = !!(f && f.matches(".hero.has-img"));
@@ -1869,7 +1989,7 @@ addEventListener("scroll", topState, {passive:true});
 function render(){
   document.querySelectorAll(".sections > .sec").forEach(b => b.setAttribute("aria-selected", b.dataset.sec===sec));
   document.getElementById("view").innerHTML = SECTIONS[sec]();
-  initZoomMaps(); initPlacesMap(); heroUnderTop();
+  initZoomMaps(); initPlacesMap(); initRoadsMap(); heroUnderTop();
   const want = "#" + stateHash();
   if (location.hash !== want) try{ history[firstRender ? "replaceState" : "pushState"](null,"",want); }catch(_){}
   firstRender = false;
@@ -1909,6 +2029,8 @@ view.addEventListener("click", e => {
   else if (b.dataset.goto){ pastId = b.dataset.goto; pastTab = defTab(trip(pastId)); go("past"); window.scrollTo(0,0); }
   else if (b.dataset.photo){ lbShow(+b.dataset.photo); }
   else if (b.dataset.dphoto){ const [tid,dd,i] = b.dataset.dphoto.split(":"), t = trip(tid); lbList = t.photos.filter(p => p.day === +dd); lbShow(+i); }
+  else if (b.dataset.rshow){ showRoad(b.dataset.rshow); }
+  else if (b.dataset.road && !b.closest("#rmap")){ roadSel = b.dataset.road; roadCard(roadSel); }
   else if (b.dataset.pphoto){ const p = PLACES.find(x => x.id === b.dataset.pphoto); lbList = [{src:p.full||p.img, cap:p.n}]; lbShow(0); }
   else if (b.dataset.daymap){ lbList = [{src:b.dataset.daymap, cap:"Mapa trasy"}]; lbShow(0); }
   else if (b.dataset.car){ carCard(b.dataset.car); }
