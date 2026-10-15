@@ -197,12 +197,11 @@ body.over-hero #view > .hero.has-img:first-child .tpick{top:calc(var(--top-h,80p
 .fleet-sort .sec{min-height:30px;padding:6px 11px;font-size:10.5px;letter-spacing:.06em}
 /* Logout (Tom 2026-10-06): icon button top right, back to the password screen */
 .top-nav{margin-left:auto}
-.logout{flex:none;width:44px;height:44px;padding:0;display:inline-grid;place-items:center;border-radius:999px;background:var(--surface);border:1px solid var(--line);color:var(--muted);cursor:pointer;transition:background .15s,color .15s,border-color .15s}
-@media (hover:hover){.logout:hover{background:var(--soft);color:var(--ink);border-color:var(--muted)}}
-.logout:focus-visible{outline:2px solid var(--flag);outline-offset:2px}
-body.over-hero:not(.top-solid) .logout{background:rgba(20,27,33,.45);border-color:rgba(255,255,255,.28);color:#E6ECF1;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
-@media (hover:hover){body.over-hero:not(.top-solid) .logout:hover{background:rgba(20,27,33,.7);color:#fff;border-color:rgba(255,255,255,.5)}}
-@media (max-width:640px){.top-nav{order:2;margin-left:0}.logout{order:1;margin-left:auto}}
+.logout,.menu-btn{flex:none;width:44px;height:44px;padding:0;display:inline-grid;place-items:center;border-radius:999px;background:var(--surface);border:1px solid var(--line);color:var(--muted);cursor:pointer;transition:background .15s,color .15s,border-color .15s}
+@media (hover:hover){.logout:hover,.menu-btn:hover{background:var(--soft);color:var(--ink);border-color:var(--muted)}}
+.logout:focus-visible,.menu-btn:focus-visible{outline:2px solid var(--flag);outline-offset:2px}
+body.over-hero:not(.top-solid) .logout,body.over-hero:not(.top-solid) .menu-btn{background:rgba(20,27,33,.45);border-color:rgba(255,255,255,.28);color:#E6ECF1;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+@media (hover:hover){body.over-hero:not(.top-solid) .logout:hover,body.over-hero:not(.top-solid) .menu-btn:hover{background:rgba(20,27,33,.7);color:#fff;border-color:rgba(255,255,255,.5)}}
 /* Password gate */
 html.locked .wrap{display:none}
 html:not(.locked) #gate{display:none}
@@ -474,9 +473,15 @@ html.guest #compose,html.guest .story-del{display:none!important}
 .sec,.btn{display:inline-flex;align-items:center;justify-content:center}
 .sections{gap:8px}
 .top{padding-block:20px 18px}.top-nav{padding:0}
-@media (max-width:640px){.top-nav{flex:1 1 100%;flex-wrap:nowrap;gap:6px}.top-nav .sec{flex:1 1 auto;border-radius:12px;padding:6px 8px;letter-spacing:.04em;line-height:1.2;white-space:normal;text-align:center}}
-/* Six sections since Sypačky (Tom 2026-10-14): on phones the menu is a 3 × 2 grid of one-line buttons. */
-@media (max-width:640px){.top-nav{display:grid;grid-template-columns:repeat(3,1fr)}.top-nav .sec{min-height:36px;padding:6px 4px;white-space:nowrap;letter-spacing:.03em}}
+/* Phones (Tom 2026-10-15): a hamburger button opens the sections as a dropdown panel under the header. */
+.menu-btn{display:none}
+@media (max-width:640px){
+  .menu-btn{display:inline-grid;order:1;margin-left:auto}.logout{order:2;margin-left:0}
+  .top-nav{display:none;position:absolute;left:0;right:0;top:calc(100% - 8px);z-index:60;flex-direction:column;align-items:stretch;gap:2px;padding:6px;background:var(--surface);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.25),var(--card-shadow)}
+  .top-nav.open{display:flex}
+  .top-nav .sec,body.over-hero:not(.top-solid) .top-nav .sec{justify-content:flex-start;min-height:48px;padding:0 14px;border:0;border-radius:10px;background:transparent;color:var(--ink);font-size:13px;-webkit-backdrop-filter:none;backdrop-filter:none}
+  .top-nav .sec[aria-selected="true"],body.over-hero:not(.top-solid) .top-nav .sec[aria-selected="true"]{background:var(--soft);color:var(--ink)}
+}
 .route-link,.linkish,.gcar .model{display:inline-flex;align-items:center;min-height:44px}
 .meet-card dd a{display:inline-flex;align-items:center;min-height:44px;margin-block:-12px}
 /* Compact trip badges; the invisible ::after keeps a ~44px tap area. */
@@ -581,7 +586,8 @@ button.place-pic{border:0;padding:0;cursor:zoom-in}
       <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><rect width="34" height="34" rx="7" style="fill:var(--flag)"/><path d="M6 25 C12 25 11 9 17 9 S22 25 28 25" style="stroke:var(--flag-ink)" stroke-width="3" fill="none" stroke-linecap="round"/></svg>
       <h1>Trip Hub</h1>
     </a>
-    <nav class="sections top-nav" role="tablist" aria-label="Sekce">
+    <button type="button" class="menu-btn" id="menu-btn" aria-label="Menu" aria-expanded="false" aria-controls="top-nav"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    <nav class="sections top-nav" id="top-nav" role="tablist" aria-label="Sekce">
       <button class="sec" role="tab" id="sec-next" data-sec="next">Příští trip</button>
       <button class="sec" role="tab" id="sec-past" data-sec="past">Minulé tripy</button>
       <button class="sec" role="tab" id="sec-members" data-sec="members">Lidé</button>
@@ -2128,6 +2134,15 @@ const GUEST_HASH = "9aea975aa81c0e9f85e86ed9eff9b64186302176f9c4ff8f867597b79bff
 // Site password gate (Tom 2026-10-06): the group password is checked by Supabase (rpc check_story_pass), so it isn't in the page.
 // It only hides the site from casual visitors; the repo and its files stay public on GitHub.
 const sha256 = async t => crypto.subtle ? [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t)))].map(x => x.toString(16).padStart(2,"0")).join("") : "";
+// Hamburger menu on phones: toggle, close after choosing a section, on an outside tap or Escape.
+(() => {
+  const btn = document.getElementById("menu-btn"), nav = document.getElementById("top-nav");
+  const set = open => { nav.classList.toggle("open", open); btn.setAttribute("aria-expanded", open); };
+  btn.addEventListener("click", e => { e.stopPropagation(); set(!nav.classList.contains("open")); if (nav.classList.contains("open")) (nav.querySelector('[aria-selected="true"]') || nav.querySelector(".sec")).focus(); });
+  nav.addEventListener("click", e => { if (e.target.closest("[data-sec]")) set(false); });
+  document.addEventListener("click", e => { if (nav.classList.contains("open") && !e.target.closest("#top-nav,#menu-btn")) set(false); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && nav.classList.contains("open")){ set(false); btn.focus(); } });
+})();
 document.getElementById("logout").addEventListener("click", () => {
   store.set("site-auth", ""); store.set("story-pass", "");
   const html = document.documentElement, f = document.getElementById("gate-form");
