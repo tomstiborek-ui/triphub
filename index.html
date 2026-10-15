@@ -546,7 +546,9 @@ button.tag::after{content:"";position:absolute;inset:-12px -3px}
 .rline .rstroke{stroke-width:4.5}
 .rline.sel .rcase{stroke-width:11}.rline.sel .rstroke{stroke-width:7}
 @media (hover:hover){.rline:hover .rstroke{stroke-width:6.5}}
-.road-map .daymap{display:block;width:100%;height:auto}
+.pmap.road-map{height:min(46vh,380px);min-height:240px;border-radius:0;box-shadow:none}
+.rline.dline{pointer-events:none;cursor:auto}
+.road-map .pmap-zoom{right:auto;left:10px}
 .road-actions{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 4px}.road-actions a{text-decoration:none}
 button.place-pic{border:0;padding:0;cursor:zoom-in}
 /* Dark mode: lighter icon and stronger tile tint so brown/blue icons stay readable. */
@@ -1955,7 +1957,12 @@ function roadCard(id){
   const specs = [["Délka", r.km ? `${fmt(r.km)} km` : ""], ["Stoupání", r.climb ? `≈${fmt(r.climb)} m` : ""], ["Nejvýš", r.max ? `${fmt(r.max)} m n. m.` : ""], ["Nejníž", r.min ? `${fmt(r.min)} m n. m.` : ""], ["Oblast", r.region], ["Začátek", r.from], ["Konec", r.to]];
   const dlg = document.getElementById("carcard");
   dlg.querySelector(".cc-body").innerHTML = `
-    ${r.img ? `<img class="cc-photo" src="${esc(r.full || r.img)}" alt="${esc(r.n)}">` : `<div class="road-map">${routeSVG([{line:r.line, color:roadColor(r), mark:1}], "Mapa: " + r.n)}</div>`}
+    ${r.img ? `<img class="cc-photo" src="${esc(r.full || r.img)}" alt="${esc(r.n)}">` : ""}
+    <div class="pmap road-map" id="road-dmap" role="region" aria-label="Mapa: ${esc(r.n)}">
+      <div class="pmap-tiles"></div><div class="pmap-pins"></div>
+      <div class="pmap-zoom"><button type="button" data-pzoom="1" aria-label="Přiblížit">+</button><button type="button" data-pzoom="-1" aria-label="Oddálit">−</button></div>
+      <div class="pmap-attr">© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a></div>
+    </div>
     <div class="cc-text">
       <span class="label">Sypačka</span>
       <h2>${esc(r.n)}</h2>
@@ -1971,6 +1978,13 @@ function roadCard(id){
       ${trips.length ? `<h3>Jeli jsme ji na tripech</h3><div class="cc-trips">${trips.map(t => `<button class="tag" data-cc-trip="${t.id}">${esc(t.name)} <span class="note">${esc(t.when)}</span></button>`).join("")}</div>` : ""}
     </div>`;
   if (!dlg.open) dlg.showModal(); dlg.scrollTop = 0;
+  // Tom 2026-10-15: the detail shows the road over a live OSM map, start dot and end square like the route drawings.
+  const c = roadColor(r), mk = (p, z, x0, y0, wx, wy) => [wx(p[0],z) - x0, wy(p[1],z) - y0].map(n => n.toFixed(1));
+  slippyMap(document.getElementById("road-dmap"), {pts:r.line, padX:70, padY:70, maxFit:16,
+    layer:(x0, y0, z, wx, wy, W, H) => {
+      const d = r.line.map((p,i) => `${i?"L":"M"}${mk(p, z, x0, y0, wx, wy).join(",")}`).join(""), [sx,sy] = mk(r.line[0], z, x0, y0, wx, wy), [ex,ey] = mk(r.line[r.line.length-1], z, x0, y0, wx, wy);
+      return `<svg class="rmap-svg" width="${W}" height="${H}"><g class="rline sel dline"><path d="${d}" class="rcase"/><path d="${d}" class="rstroke" stroke="${c}"/><rect x="${ex-6}" y="${ey-6}" width="12" height="12" rx="2" fill="#2F3A45" stroke="#fff" stroke-width="2"/><circle cx="${sx}" cy="${sy}" r="8" fill="${c}" stroke="#fff" stroke-width="2"/></g></svg>`;
+    }});
 }
 function showRoad(id){
   const dlg = document.getElementById("carcard"); if (dlg.open) dlg.close();
