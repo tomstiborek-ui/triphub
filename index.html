@@ -570,6 +570,30 @@ button.place-pic{border:0;padding:0;cursor:zoom-in}
 .pnum{flex:none;display:flex;align-items:center;justify-content:center;border-radius:50%;color:#fff;font-weight:700}
 .place .tags{display:flex;flex-wrap:wrap;gap:4px}
 .place-actions{display:flex;gap:6px;margin-top:4px}
+/* Tom 2026-10-29: Místa as a list, one row per place (icon or photo, name, category · address, trip tags, buttons). */
+.places.plist{display:flex;flex-direction:column;align-items:stretch;gap:0;background:var(--surface);box-shadow:var(--card-shadow);border-radius:10px;overflow:hidden}
+.plist .place{box-shadow:none;border-radius:0;grid-template-columns:40px minmax(0,1fr);padding:8px 12px;gap:12px;align-items:center;border-top:1px solid var(--line)}
+.plist .place:first-child{border-top:0}
+.plist .place.sel{box-shadow:inset 3px 0 0 var(--accent);background:var(--soft)}
+.plist .place.legend{box-shadow:inset 3px 0 0 #FCD34D}
+.plist .place-pic{width:40px;height:40px}.plist .place-pic svg{width:22px;height:22px}.plist .place.legend .place-pic svg{width:24px;height:24px}
+.plist .place-body{flex-direction:row;align-items:center;gap:12px}
+.plist .place-body>h4{flex:0 1 auto;min-width:0;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.plist .place-meta{flex:1 1 0;min-width:0;display:flex;gap:8px;align-items:baseline;line-height:1.6;padding-top:1px}
+.plist .place-meta .place-addr{font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.plist .place .tags{flex:none}
+.plist .place-actions{margin:0;flex:none}
+@media (max-width:640px){
+  .plist .place{grid-template-columns:36px minmax(0,1fr);padding:8px 10px;gap:10px}
+  .plist .place-pic{width:36px;height:36px}
+  .plist .place-body{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:8px;row-gap:1px}
+  .plist .place-body>h4{grid-column:1;font-size:14px}
+  .plist .place-meta{grid-column:1;grid-row:2}
+  .plist .place-meta .place-addr{display:none}
+  .plist .place .tags{display:none}
+  .plist .place-actions{grid-column:2;grid-row:1/3}
+  .plist .place-actions .ibtn:not(.primary):not([data-pshow]){display:none}
+}
 .ibtn{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;padding:0}
 .ibtn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .ibtn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
@@ -1775,14 +1799,12 @@ function viewPlaces(){
       <div class="pmap-zoom"><button type="button" data-pzoom="1" aria-label="Přiblížit">+</button><button type="button" data-pzoom="-1" aria-label="Oddálit">−</button></div>
       <div class="pmap-attr">© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a></div>
     </div>
-    ${list.length ? `<div class="places">${list.map((p,i) => `
-      <article class="place${placeSel===p.id?" sel":""}${p.cat==="legenda"?" legend":""}" id="place-${p.id}">
+    ${list.length ? `<div class="places plist">${list.map((p,i) => `
+      <article class="place${placeSel===p.id?" sel":""}${p.cat==="legenda"?" legend":""}" id="place-${p.id}"${p.note && p.cat==="legenda" ? ` title="${esc(p.note)}"` : ""}>
         ${p.img ? `<button type="button" class="place-pic" data-pphoto="${p.id}" aria-label="Fotka: ${esc(p.n)}" style="--c:${placeCat_(p).c}"><img src="${esc(p.img)}" alt="" loading="lazy"></button>` : `<div class="place-pic" style="--c:${placeCat_(p).c};--i:${placeCat_(p).i||placeCat_(p).c}"><svg viewBox="0 0 24 24" aria-hidden="true">${PLACE_ICON[p.cat] || PLACE_ICON.jine}</svg></div>`}
         <div class="place-body">
           <h4>${esc(p.n)}</h4>
-          <div class="place-meta"><span class="label">${placeCat_(p).l}</span></div>
-          <div class="place-addr" data-paddr="${p.id}">${placeAddr(p) ? esc(placeAddr(p)) : ""}</div>
-          ${p.cat === "legenda" && p.note ? `<div class="place-story">${esc(p.note)}</div>` : ""}
+          <div class="place-meta"><span class="label">${placeCat_(p).l}</span><span class="place-addr" data-paddr="${p.id}">${placeAddr(p) ? esc(placeAddr(p)) : ""}</span></div>
           ${(p.trips||[]).filter(id => trip(id)).length ? `<div class="tags">${p.trips.filter(id => trip(id)).map(id => `<button class="tag" data-goto="${id}">${esc(trip(id).name)}</button>`).join("")}</div>` : ""}
         <div class="place-actions">
           <a class="ibtn primary" href="${navMapy(p)}" target="_blank" rel="noopener" title="Navigovat (Mapy.cz)" aria-label="Navigovat v Mapy.cz"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l18-8-8 18-2-8z"/></svg></a>
