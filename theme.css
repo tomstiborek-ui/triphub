@@ -1,6 +1,6 @@
-/* Trip Hub preview (Tom 2026-11-01): an experiment in a clean "product page" visual language — big confident headlines,
-   lots of white space, a thin translucent top bar, soft grey tiles, pill buttons and one blue accent.
-   Loaded only by preview.html, on top of the normal styles in index.html; the live site does not use this file. */
+/* Trip Hub look (Tom 2026-11-01, live after he reviewed the preview): big confident headlines, lots of white space,
+   a thin translucent top bar, soft grey tiles, pill buttons and one blue accent.
+   Loaded by index.html right after its main style block and overrides its tokens and components. */
 :root{
   --bg:#FFFFFF; --surface:#F5F5F7; --ink:#1D1D1F; --muted:#6E6E73; --line:#D2D2D7;
   --accent:#0071E3; --accent-ink:#FFFFFF; --flag:#1D1D1F; --flag-ink:#FFFFFF; --soft:#E8E8ED;
@@ -103,9 +103,6 @@ body.over-hero:not(.top-solid) .logout,body.over-hero:not(.top-solid) .menu-btn{
 .fleet th{font-weight:600;text-transform:none;letter-spacing:-.01em}
 .fleet-wrap{border-radius:22px;background:var(--tile);box-shadow:none}
 
-/* Preview badge */
-.preview-badge{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:90;display:flex;gap:10px;align-items:center;padding:8px 8px 8px 16px;border-radius:999px;background:rgba(29,29,31,.86);color:#fff;font:500 13px/1.2 var(--body);letter-spacing:-.01em;-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);box-shadow:0 8px 30px rgba(0,0,0,.25)}
-.preview-badge a{color:#fff;background:rgba(255,255,255,.18);padding:6px 12px;border-radius:999px;text-decoration:none}
 @media (max-width:640px){
   .hero{padding-block:48px}
   .hero h2{font-size:clamp(36px,11vw,48px)}
@@ -114,5 +111,4 @@ body.over-hero:not(.top-solid) .logout,body.over-hero:not(.top-solid) .menu-btn{
   .stat .v{font-size:32px}
   .subhead{margin-block:40px 14px}
   .panel{padding:20px;border-radius:18px}
-  .preview-badge{white-space:nowrap;font-size:12px;bottom:12px;padding:6px 6px 6px 12px}
 }
