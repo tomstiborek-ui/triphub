@@ -2157,15 +2157,41 @@ function roadFormHTML(){
   </form>`;
 }
 const roadMsg = t => { if (roadForm) roadForm.msg = t; const el = document.getElementById("r-msg"); if (el) el.textContent = t; };
+// A route GPX from Mapy.com can hold only its start, via points and end (Broňo's file, 2026-11-04). Then the road is
+// filled in here: OSRM finds the drive through those points and Open-Meteo gives the heights, both from the visitor's browser.
+function fillRoute(pts){
+  const via = pts.length <= 25 ? pts : pts.filter((_, i) => i % Math.ceil(pts.length / 24) === 0).concat([pts[pts.length-1]]);
+  return fetch(`https://router.project-osrm.org/route/v1/driving/${via.map(p => p[0].toFixed(6) + "," + p[1].toFixed(6)).join(";")}?overview=full&geometries=geojson`)
+    .then(r => r.ok ? r.json() : Promise.reject(new Error("route")))
+    .then(j => { const c = j.routes && j.routes[0] && j.routes[0].geometry.coordinates; if (!c || c.length < 2) throw new Error("route"); return c; })
+    .then(c => {
+      const n = Math.min(300, c.length), idx = [...Array(n)].map((_, i) => Math.round(i * (c.length - 1) / (n - 1)));
+      const chunks = []; for (let i = 0; i < idx.length; i += 100) chunks.push(idx.slice(i, i + 100));
+      return Promise.all(chunks.map(ch => fetch(`https://api.open-meteo.com/v1/elevation?latitude=${ch.map(i => c[i][1].toFixed(5)).join(",")}&longitude=${ch.map(i => c[i][0].toFixed(5)).join(",")}`)
+          .then(r => r.ok ? r.json() : Promise.reject(new Error("ele"))).then(j => j.elevation)))
+        .then(parts => { const h = parts.flat(); if (h.length !== idx.length) throw new Error("ele");
+          // heights at the sampled points, straight-line in between
+          return c.map((p, i) => { let k = 0; while (k < idx.length - 2 && idx[k+1] < i) k++; const f = idx[k+1] === idx[k] ? 0 : (i - idx[k]) / (idx[k+1] - idx[k]); return [p[0], p[1], h[k] + (h[k+1] - h[k]) * Math.min(1, Math.max(0, f))]; }); })
+        .catch(() => c.map(p => [p[0], p[1], null]));
+    });
+}
 function readRoadGpx(file){
   file.text().then(x => {
-    const stats = roadStats(gpxPoints(x)), names = gpxNames(x), v = roadForm.vals;
-    roadForm.stats = stats; roadForm.msg = "";
+    const pts = gpxPoints(x), names = gpxNames(x), v = roadForm.vals;
+    roadStats(pts); // throws on a file without a usable track
     if (!v.n.trim()) v.n = names.name || file.name.replace(/\.gpx$/i, "").replace(/[_-]+/g, " ").trim();
     if (!v.from.trim() && names.from) v.from = names.from;
     if (!v.to.trim() && names.to) v.to = names.to;
-    roadSel = "draft"; rmapView = null; render();
-    const el = document.getElementById("rmap"); if (el && el._show) el._show("draft");
+    const show = (stats, msg) => {
+      roadForm.stats = stats; roadForm.msg = msg;
+      roadSel = "draft"; rmapView = null; render();
+      const el = document.getElementById("rmap"); if (el && el._show) el._show("draft");
+    };
+    if (!gpxSparse(pts)) return show(roadStats(pts), "");
+    roadMsg("Tohle GPX má jen pár bodů, dopočítávám trasu po silnicích…");
+    return fillRoute(pts)
+      .then(full => show(roadStats(full), "GPX mělo jen pár bodů, tak jsem trasu dopočítal po silnicích. Zkontroluj ji na mapě, jestli jede tudy, kudy má."))
+      .catch(() => show(roadStats(pts), "Pozor: tohle GPX má jen pár bodů, ne celou trasu, a trasu se nepodařilo dopočítat. Čára i čísla budou nepřesné. Zkus GPX v Mapy.com vyexportovat znovu jako stopu (track)."));
   }).catch(() => roadMsg("Z tohohle souboru jsem trasu nevyčetl. Je to GPX s trasou (z Mapy.cz: Uložit / Exportovat GPX)?"));
 }
 function saveRoad(){

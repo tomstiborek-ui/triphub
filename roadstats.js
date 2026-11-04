@@ -2,12 +2,17 @@
 // Used by index.html (people add roads from a GPX on the site) and by trips/tools/mk_road.js (Node).
 // gpxPoints(xml) -> [[lon,lat,ele|null],…]; roadStats(points) -> {km, line, climb, min, max, prof, turns, sharp, hairpins, curv, straight, grade, avg}.
 (function(root){
+  // Track points when the file has a track; route points (<rtept>) only when it has nothing else, because a route
+  // often holds just its start, via points and end, and mixing them with the track draws lines across the map.
   function gpxPoints(x){
-    return [...String(x).matchAll(/<(?:\w+:)?(?:trkpt|rtept)\b([^>]*)>([\s\S]*?)<\/(?:\w+:)?(?:trkpt|rtept)>|<(?:\w+:)?(?:trkpt|rtept)\b([^>]*)\/>/g)].map(m => {
-      const at = m[1] || m[3] || "", lat = /\blat\s*=\s*["']([-\d.]+)/.exec(at), lon = /\blon\s*=\s*["']([-\d.]+)/.exec(at), ele = /<(?:\w+:)?ele>\s*([-\d.]+)/.exec(m[2] || "");
-      return lat && lon ? [+lon[1], +lat[1], ele ? +ele[1] : null] : null;
+    const pts = tag => [...String(x).matchAll(new RegExp(`<(?:\\w+:)?${tag}\\b([^>]*)>([\\s\\S]*?)<\\/(?:\\w+:)?${tag}>|<(?:\\w+:)?${tag}\\b([^>]*)\\/>`, "g"))].map(m => {
+      const at = m[1] || m[3] || "", lat = /\blat\s*=\s*["']([-\d.eE+]+)/.exec(at), lon = /\blon\s*=\s*["']([-\d.eE+]+)/.exec(at), ele = /<(?:\w+:)?ele>\s*([-\d.eE+]+)/.exec(m[2] || "");
+      return lat && lon && isFinite(+lat[1]) && isFinite(+lon[1]) ? [+lon[1], +lat[1], ele && isFinite(+ele[1]) ? +ele[1] : null] : null;
     }).filter(Boolean);
+    const trk = pts("trkpt"); return trk.length >= 2 ? trk : pts("rtept");
   }
+  // True when the points are too sparse to be the road itself (e.g. only a route's start and end): over 300 m per point on average.
+  function gpxSparse(P){ if (P.length < 2) return true; let d = 0; for (let i = 1; i < P.length; i++) d += Math.hypot((P[i][0]-P[i-1][0]) * Math.cos(P[i][1]*Math.PI/180), P[i][1]-P[i-1][1]) * 111.32; return d / (P.length - 1) > 0.3; }
   // The GPX's own name: Mapy.com writes "Route from A to B"; returns {name, from, to} where it can tell.
   function gpxNames(x){
     const nm = /<(?:\w+:)?(?:trk|rte)>\s*<(?:\w+:)?name>([^<]*)<\/(?:\w+:)?name>/.exec(String(x)) || /<(?:\w+:)?name>([^<]*)<\/(?:\w+:)?name>/.exec(String(x));
@@ -60,6 +65,6 @@
       Object.assign(out, {grade:Math.round(g), avg:upd ? +(upe / (upd*1000) * 100).toFixed(1) : 0}); }
     return out;
   }
-  const api = {gpxPoints, gpxNames, roadStats};
+  const api = {gpxPoints, gpxNames, gpxSparse, roadStats};
   if (typeof module === "object" && module.exports) module.exports = api; else Object.assign(root, api);
 })(typeof window !== "undefined" ? window : this);
