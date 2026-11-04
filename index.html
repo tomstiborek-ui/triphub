@@ -552,14 +552,20 @@ button.tag::after{content:"";position:absolute;inset:-12px -3px}
 .road-map .pmap-zoom{right:auto;left:10px}
 .road-vil{margin:8px 0 0;font-size:14px;line-height:1.5}.road-stat-note{font-size:12px;margin:6px 0 0}
 .road-add{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;margin-top:16px}
-.road-compose{position:static;margin-top:16px}
+.road-compose{position:static;margin:0}
+#roaddlg{padding:0;border:0;border-radius:14px;background:var(--surface);color:var(--ink);width:min(720px,calc(100vw - 32px));max-height:calc(100vh - 32px);overflow:auto;box-shadow:var(--card-shadow)}
+#roaddlg::backdrop{background:rgba(10,14,20,.6)}
+#roaddlg .cc-close{position:sticky;top:8px;float:right;margin:8px 8px -52px 0;z-index:3;width:44px;height:44px;border-radius:999px;border:0;background:rgba(20,26,34,.55);color:#fff;font-size:19px;cursor:pointer}
+#roaddlg .road-compose{padding:22px;box-shadow:none;border-radius:0;background:none}
+#roaddlg .pmap.road-map{margin:0 -22px;height:min(40vh,320px)}
+@media (max-width:640px){#roaddlg{width:100vw;max-width:100vw;max-height:100dvh;height:100dvh;border-radius:0}#roaddlg .road-compose{padding:18px 16px}#roaddlg .pmap.road-map{margin:0 -16px}}
 .road-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 @media (max-width:640px){.road-row{grid-template-columns:1fr}}
 .road-sum{display:flex;align-items:center;gap:12px;font-size:14px}.road-sum svg{width:56px;height:56px;flex:none;background:var(--bg);border-radius:8px}.road-sum b{display:block;font-weight:600}
 .road-trips{border:0;padding:0;margin:0;display:flex;flex-wrap:wrap;gap:6px 14px;font-size:14px}.road-trips legend{font-size:12px;color:var(--muted);margin-bottom:4px;padding:0}
 .road-trips .chk{display:inline-flex;align-items:center;gap:6px;color:var(--ink);font-size:14px}
 .road-form-actions{display:flex;flex-wrap:wrap;gap:8px}.btn.danger{color:#C62828;border-color:currentColor}
-html.guest .road-add,html.guest .road-add-hero,html.guest #road-compose,html.guest .road-admin{display:none!important}
+html.guest .road-add,html.guest .road-add-hero,html.guest #road-compose,html.guest #roaddlg,html.guest .road-admin{display:none!important}
 .road-actions{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 4px}.road-actions a{text-decoration:none}
 button.place-pic{border:0;padding:0;cursor:zoom-in}
 /* Dark mode: lighter icon and stronger tile tint so brown/blue icons stay readable. */
@@ -640,6 +646,7 @@ button.place-pic{border:0;padding:0;cursor:zoom-in}
 
   <main id="view"></main>
   <dialog id="carcard" aria-label="Karta auta"><button class="cc-close" data-cc-close aria-label="Zavřít">×</button><div class="cc-body"></div></dialog>
+  <dialog id="roaddlg" aria-label="Přidat sypačku"><button class="cc-close" data-road-cancel aria-label="Zavřít">×</button><div class="rf-body"></div></dialog>
   <dialog id="lightbox" aria-label="Fotka"><div class="lb-stage"><img alt=""></div><span class="lb-count"></span><button data-lb="prev" aria-label="Předchozí">‹</button><button data-lb="next" aria-label="Další">›</button><button data-lb="close" aria-label="Zavřít">×</button></dialog>
 </div>
 
@@ -1980,8 +1987,7 @@ function viewSypacky(){
             <button class="ibtn" type="button" data-rshow="${r.id}" title="Ukázat na mapě" aria-label="Ukázat na mapě"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
           </div>
         </div>
-      </article>`).join("")}</div>` : `<div class="empty">Zatím žádné sypačky. Přidej první: stačí GPX silnice z Mapy.cz (Uložit / Exportovat GPX).</div>`}
-    ${roadFormHTML()}`;
+      </article>`).join("")}</div>` : `<div class="empty">Zatím žádné sypačky. Přidej první: stačí GPX silnice z Mapy.cz (Uložit / Exportovat GPX).</div>`}`;
 }
 // Small line drawing of a road for cards without a photo.
 function roadThumb(r){
@@ -2018,11 +2024,7 @@ function roadCard(id){
   const dlg = document.getElementById("carcard");
   dlg.querySelector(".cc-body").innerHTML = `
     ${r.img ? `<img class="cc-photo" src="${esc(r.full || r.img)}" alt="${esc(r.n)}">` : ""}
-    <div class="pmap road-map" id="road-dmap" role="region" aria-label="Mapa: ${esc(r.n)}">
-      <div class="pmap-tiles"></div><div class="pmap-pins"></div>
-      <div class="pmap-zoom"><button type="button" data-pzoom="1" aria-label="Přiblížit">+</button><button type="button" data-pzoom="-1" aria-label="Oddálit">−</button></div>
-      <div class="pmap-attr">© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a></div>
-    </div>
+    ${roadMapBox("road-dmap", r.n)}
     <div class="cc-text">
       <span class="label">Sypačka</span>
       <h2>${esc(r.n)}</h2>
@@ -2048,9 +2050,18 @@ function roadCard(id){
     if (!v){ n.textContent = "–"; return; }
     n.textContent = v.length; l.textContent = v.length ? v.join(" → ") : "";
   });
-  // Tom 2026-10-15: the detail shows the road over a live OSM map, start dot and end square like the route drawings.
+  roadDetailMap(document.getElementById("road-dmap"), r);
+}
+// Tom 2026-10-15: the detail shows the road over a live OSM map, start dot and end square like the route drawings.
+const roadMapBox = (id, label) => `<div class="pmap road-map" id="${id}" role="region" aria-label="Mapa: ${esc(label)}">
+      <div class="pmap-tiles"></div><div class="pmap-pins"></div>
+      <div class="pmap-zoom"><button type="button" data-pzoom="1" aria-label="Přiblížit">+</button><button type="button" data-pzoom="-1" aria-label="Oddálit">−</button></div>
+      <div class="pmap-attr">© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a></div>
+    </div>`;
+function roadDetailMap(el, r){
+  if (!el) return;
   const c = roadColor(r), mk = (p, z, x0, y0, wx, wy) => [wx(p[0],z) - x0, wy(p[1],z) - y0].map(n => n.toFixed(1));
-  slippyMap(document.getElementById("road-dmap"), {pts:r.line, padX:70, padY:70, maxFit:16,
+  slippyMap(el, {pts:r.line, padX:70, padY:70, maxFit:16,
     layer:(x0, y0, z, wx, wy, W, H) => {
       const d = r.line.map((p,i) => `${i?"L":"M"}${mk(p, z, x0, y0, wx, wy).join(",")}`).join(""), [sx,sy] = mk(r.line[0], z, x0, y0, wx, wy), [ex,ey] = mk(r.line[r.line.length-1], z, x0, y0, wx, wy);
       return `<svg class="rmap-svg" width="${W}" height="${H}"><g class="rline sel dline"><path d="${d}" class="rcase"/><path d="${d}" class="rstroke" stroke="${c}"/><rect x="${ex-6}" y="${ey-6}" width="12" height="12" rx="2" fill="#2F3A45" stroke="#fff" stroke-width="2"/><circle cx="${sx}" cy="${sy}" r="8" fill="${c}" stroke="#fff" stroke-width="2"/></g></svg>`;
@@ -2105,7 +2116,7 @@ function loadRoads(){
     .then(r => { if (r.status === 404) throw new Error("missing"); if (!r.ok) throw new Error(r.status); return r.json(); })
     .then(rows => { ROADS.splice(ROADS_BUILTIN); ROADS.push(...rows.map(toRoad).filter(Boolean)); roadsDb = "ok"; })
     .catch(err => { roadsDb = err.message === "missing" ? "missing" : "error"; })
-    .finally(() => { if (sec === "roads" && !roadForm) render(); });
+    .finally(() => { if (sec === "roads") render(); if (roadForm) renderRoadForm(); });
 }
 // The road as it would be saved: stats from the GPX (or the road being edited) plus what was typed into the form.
 function roadDraft(){
@@ -2126,12 +2137,27 @@ function openRoadForm(id){
     roadForm.vals.trips = (r.trips || []).slice();
     if (r.imgPath) roadForm.photo = {path:r.imgPath, url:r.img};
   }
-  render();
-  const f = document.getElementById("road-compose"); if (f){ f.scrollIntoView({block:"start", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"}); (document.getElementById(r ? "r-n" : "r-gpx") || f).focus({preventScroll:true}); }
+  // Tom 2026-11-04: the form opens in its own window over the page.
+  const dlg = document.getElementById("roaddlg");
+  dlg.setAttribute("aria-label", r ? "Upravit sypačku" : "Přidat sypačku");
+  renderRoadForm(true);
+  if (!dlg.open) dlg.showModal(); dlg.scrollTop = 0;
+  document.getElementById(r ? "r-n" : "r-gpx")?.focus();
 }
-function closeRoadForm(){ if (roadForm && roadForm.photo && roadForm.photo.file) URL.revokeObjectURL(roadForm.photo.url); roadForm = null; if (roadSel === "draft") roadSel = null; rmapView = null; render(); }
+// Redraws the form inside its window; the road being added shows on its own map there.
+function renderRoadForm(fit){
+  const dlg = document.getElementById("roaddlg"), body = dlg.querySelector(".rf-body"); if (!roadForm) return;
+  const top = dlg.scrollTop, d = roadDraft();
+  body.innerHTML = roadFormHTML();
+  const el = document.getElementById("rf-map"); if (el && d) roadDetailMap(el, d);
+  if (!fit) dlg.scrollTop = top;
+}
+function closeRoadForm(saved){
+  if (roadForm && roadForm.photo && roadForm.photo.file && !saved) URL.revokeObjectURL(roadForm.photo.url);
+  roadForm = null; if (roadSel === "draft") roadSel = null;
+  const dlg = document.getElementById("roaddlg"); if (dlg.open) dlg.close(); dlg.querySelector(".rf-body").innerHTML = "";
+}
 function roadFormHTML(){
-  if (!roadForm) return `<div class="road-add"><button class="btn" type="button" data-road-add>Přidat sypačku</button><span class="note">Stačí GPX z Mapy.cz, délku, stoupání, zatáčky a mapu dopočítáme.</span></div>`;
   const f = roadForm, v = f.vals, st = f.stats, off = roadsDb === "off" || roadsDb === "missing";
   const past = TRIPS.filter(t => t.status === "done"); // newest first, as in TRIPS
   const sum = st ? [st.km != null ? `${fmt(st.km)} km` : "", st.climb != null ? `≈${fmt(st.climb)} m stoupání` : "", st.turns != null ? `${st.turns} zatáček` : "", st.hairpins ? `${st.hairpins} vraceček` : "", st.grade != null ? `max. sklon ${st.grade} %` : ""].filter(Boolean).join(" · ") : "";
@@ -2139,7 +2165,7 @@ function roadFormHTML(){
   return `<form class="compose road-compose" id="road-compose" novalidate>
     <span class="label">${f.edit ? "Upravit sypačku" : "Přidat sypačku"}</span>
     <label for="r-gpx">${f.edit ? "Nový GPX (nepovinné)" : "GPX soubor"}<input id="r-gpx" type="file" accept=".gpx,application/gpx+xml,application/xml,text/xml"></label>
-    ${st ? `<div class="road-sum">${roadThumb(roadDraft())}<div><b>${esc(sum)}</b><button type="button" class="linkish" data-rshow="draft">Ukázat na mapě</button></div></div>` : ""}
+    ${st ? `${roadMapBox("rf-map", v.n || "Nová sypačka")}<div class="road-sum"><b>${esc(sum)}</b></div>` : ""}
     ${inp("n", "Název", v.n, 'required maxlength="80" placeholder="Třeba Červenovodské sedlo"')}
     <div class="road-row">${inp("region", "Oblast", v.region, 'maxlength="60" placeholder="Třeba Jeseníky"')}${inp("from", "Začátek", v.from, 'maxlength="60"')}${inp("to", "Konec", v.to, 'maxlength="60"')}</div>
     <label for="r-note">Pár slov<textarea id="r-note" data-rf="note" maxlength="600" placeholder="Proč stojí za to?">${esc(v.note)}</textarea></label>
@@ -2184,8 +2210,7 @@ function readRoadGpx(file){
     if (!v.to.trim() && names.to) v.to = names.to;
     const show = (stats, msg) => {
       roadForm.stats = stats; roadForm.msg = msg;
-      roadSel = "draft"; rmapView = null; render();
-      const el = document.getElementById("rmap"); if (el && el._show) el._show("draft");
+      renderRoadForm();
     };
     if (!gpxSparse(pts)) return show(roadStats(pts), "");
     roadMsg("Tohle GPX má jen pár bodů, dopočítávám trasu po silnicích…");
@@ -2220,7 +2245,7 @@ function saveRoad(){
       const r = toRoad(row); if (!r) throw new Error("fail");
       const i = ROADS.findIndex(x => x.dbId === r.dbId); if (i >= 0) ROADS[i] = r; else ROADS.push(r);
       if (photo && photo.file) URL.revokeObjectURL(photo.url);
-      roadForm = null; roadSel = r.id; rmapView = null; render();
+      closeRoadForm(true); roadSel = r.id; rmapView = null; render();
       const el = document.getElementById("rmap"); if (el && el._show) el._show(r.id);
       const card = document.getElementById("road-" + r.id); if (card) card.scrollIntoView({block:"center"});
     })
@@ -2233,15 +2258,16 @@ function deleteRoad(){
   roadMsg("Mažu…");
   fetch(`${STORY_DB.url}/rest/v1/rpc/delete_road`, {method:"POST", headers: dbHeaders(), body: JSON.stringify({pass, road_id: f.edit})})
     .then(r => r.json().catch(() => ({})).then(j => { if (!r.ok) throw new Error(/password/.test(j.message||"") ? "pass" : "fail"); }))
-    .then(() => { store.set("story-pass", pass); const i = ROADS.findIndex(x => x.dbId === f.edit); if (i >= 0) ROADS.splice(i, 1); roadForm = null; roadSel = null; rmapView = null; render(); })
+    .then(() => { store.set("story-pass", pass); const i = ROADS.findIndex(x => x.dbId === f.edit); if (i >= 0) ROADS.splice(i, 1); closeRoadForm(); roadSel = null; rmapView = null; render(); })
     .catch(err => roadMsg(err.message === "pass" ? "Špatné heslo party." : "Sypačku se nepodařilo smazat. Zkus to znovu."));
 }
 document.addEventListener("click", e => {
   if (e.target.closest("[data-road-add]")) return openRoadForm(null);
   const ed = e.target.closest("[data-road-edit]"); if (ed){ const dlg = document.getElementById("carcard"); if (dlg.open) dlg.close(); return openRoadForm(ed.dataset.roadEdit); }
   if (e.target.closest("[data-road-cancel]")) return closeRoadForm();
+  if (e.target.id === "roaddlg") return; // a click beside the window keeps what was typed
   if (e.target.closest("[data-road-del]")) return deleteRoad();
-  if (e.target.closest("[data-road-unphoto]") && roadForm){ if (roadForm.photo && roadForm.photo.file) URL.revokeObjectURL(roadForm.photo.url); roadForm.photo = null; render(); document.getElementById("r-photo")?.scrollIntoView({block:"center"}); }
+  if (e.target.closest("[data-road-unphoto]") && roadForm){ if (roadForm.photo && roadForm.photo.file) URL.revokeObjectURL(roadForm.photo.url); roadForm.photo = null; renderRoadForm(); }
 });
 document.addEventListener("input", e => {
   if (!roadForm || !e.target.closest("#road-compose")) return;
@@ -2253,10 +2279,10 @@ document.addEventListener("change", e => {
   if (e.target.id === "r-gpx" && e.target.files[0]) readRoadGpx(e.target.files[0]);
   if (e.target.id === "r-photo" && e.target.files[0] && e.target.files[0].type.startsWith("image/")){
     if (roadForm.photo && roadForm.photo.file) URL.revokeObjectURL(roadForm.photo.url);
-    roadForm.photo = {file: e.target.files[0], url: URL.createObjectURL(e.target.files[0])}; render();
-    document.getElementById("r-photo")?.scrollIntoView({block:"center"});
+    roadForm.photo = {file: e.target.files[0], url: URL.createObjectURL(e.target.files[0])}; renderRoadForm();
   }
 });
+document.getElementById("roaddlg").addEventListener("cancel", e => { e.preventDefault(); closeRoadForm(); });
 document.addEventListener("submit", e => { if (e.target.id !== "road-compose") return; e.preventDefault(); saveRoad(); });
 loadRoads();
 function showRoad(id){
