@@ -115,3 +115,4 @@ body.over-hero:not(.top-solid) .logout,body.over-hero:not(.top-solid) .menu-btn{
   .subhead{margin-block:40px 14px}
   .panel{padding:20px;border-radius:18px}
 }
+.btn.ghost.danger{color:#C62828;border-color:currentColor}
