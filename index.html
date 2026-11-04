@@ -559,7 +559,7 @@ button.tag::after{content:"";position:absolute;inset:-12px -3px}
 .road-trips{border:0;padding:0;margin:0;display:flex;flex-wrap:wrap;gap:6px 14px;font-size:14px}.road-trips legend{font-size:12px;color:var(--muted);margin-bottom:4px;padding:0}
 .road-trips .chk{display:inline-flex;align-items:center;gap:6px;color:var(--ink);font-size:14px}
 .road-form-actions{display:flex;flex-wrap:wrap;gap:8px}.btn.danger{color:#C62828;border-color:currentColor}
-html.guest .road-add,html.guest #road-compose,html.guest .road-admin{display:none!important}
+html.guest .road-add,html.guest .road-add-hero,html.guest #road-compose,html.guest .road-admin{display:none!important}
 .road-actions{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 4px}.road-actions a{text-decoration:none}
 button.place-pic{border:0;padding:0;cursor:zoom-in}
 /* Dark mode: lighter icon and stronger tile tint so brown/blue icons stay readable. */
@@ -953,11 +953,11 @@ const HERO_POOL = {
 };
 HERO_POOL.roads = HERO_POOL.cars; // Sypačky: cars on the road
 const SEC_HERO_IMG = Object.fromEntries(Object.entries(HERO_POOL).map(([k,a]) => [k, `photos/${a[Math.floor(Math.random()*a.length)]}.webp`]));
-function secHero(key, title, blurb, stats){
+function secHero(key, title, blurb, stats, extra = ""){
   return `<section class="hero has-img sec-hero" style="--hero-img:url('${SEC_HERO_IMG[key]}')">
     <div class="hero-in"><div>
       <h2>${esc(title)}</h2>
-      <p>${esc(blurb)}</p>
+      <p>${esc(blurb)}</p>${extra}
     </div>
     <div class="stats">${stats.map(([k,v]) => `<div class="stat"><div class="label">${k}</div><div class="v">${v}</div></div>`).join("")}</div></div>
   </section>`;
@@ -1961,7 +1961,7 @@ const roadNav = r => ({mapy:`https://mapy.com/fnc/v1/route?end=${r.line[0][0]},$
 function viewSypacky(){
   const km = Math.round(ROADS.reduce((a,r) => a + (r.km||0), 0));
   return `
-    ${secHero("roads", "Sypačky", "Nejlepší silnice, které jsme na tripech našli. Klikni na silnici na mapě nebo v seznamu.", [["Silnice", ROADS.length], ["Kilometrů", km ? fmt(km) : "–"]])}
+    ${secHero("roads", "Sypačky", "Nejlepší silnice, které jsme na tripech našli. Klikni na silnici na mapě nebo v seznamu.", [["Silnice", ROADS.length], ["Kilometrů", km ? fmt(km) : "–"]], `<button class="btn hero-cta road-add-hero" type="button" data-road-add>Přidat sypačku</button>`)}
     <div class="pmap" id="rmap" role="region" aria-label="Mapa sypaček">
       <div class="pmap-tiles"></div><div class="pmap-pins"></div>
       <div class="pmap-zoom"><button type="button" data-pzoom="1" aria-label="Přiblížit">+</button><button type="button" data-pzoom="-1" aria-label="Oddálit">−</button></div>

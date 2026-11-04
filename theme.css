@@ -116,3 +116,6 @@ body.over-hero:not(.top-solid) .logout,body.over-hero:not(.top-solid) .menu-btn{
   .panel{padding:20px;border-radius:18px}
 }
 .btn.ghost.danger{color:#C62828;border-color:currentColor}
+/* "Přidat sypačku" in the Sypačky hero (Tom 2026-11-04) */
+.hero .hero-cta{margin-top:20px;background:#fff;color:#1d1d1f;border-color:#fff;font-weight:600}
+@media (hover:hover){.hero .hero-cta:hover{background:#e8e8ed;border-color:#e8e8ed}}
